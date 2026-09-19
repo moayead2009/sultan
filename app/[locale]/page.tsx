@@ -1,10 +1,18 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { buildPageMetadata } from '@/lib/seo';
 import { isLocale, targetLocale } from '@/lib/i18n';
 
-export default function LocaleFoundationPage({ params }: { params: { locale: string } }) {
-  if (!isLocale(params.locale)) notFound();
-  const locale = params.locale;
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isLocale(locale)) return {};
+  return buildPageMetadata('home', locale);
+}
+
+export default async function LocaleFoundationPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
   return (
     <main className="public-placeholder">
       <section className="public-placeholder__card">

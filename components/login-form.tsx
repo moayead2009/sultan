@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { safeCallbackPath } from '@/lib/security-url';
 
 export function LoginForm() {
   const router = useRouter();
@@ -18,14 +19,15 @@ export function LoginForm() {
     const result = await signIn('credentials', {
       email: String(data.get('email') ?? ''),
       password: String(data.get('password') ?? ''),
-      redirect: false
+      redirect: false,
+      callbackUrl: '/admin'
     });
     setPending(false);
     if (!result?.ok) {
       setError('Unable to sign in with those credentials.');
       return;
     }
-    router.replace(search.get('callbackUrl') || '/admin');
+    router.replace(safeCallbackPath(search.get('callbackUrl')));
     router.refresh();
   }
 

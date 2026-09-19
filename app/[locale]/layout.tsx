@@ -1,13 +1,14 @@
 import { notFound } from 'next/navigation';
 import { isLocale } from '@/lib/i18n';
 
-export default function LocaleLayout({
+export default async function LocaleLayout({
   children,
   params
 }: {
   children: React.ReactNode;
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
-  if (!isLocale(params.locale)) notFound();
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
   return children;
 }

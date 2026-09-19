@@ -13,6 +13,10 @@ export function targetLocale(locale: Locale): Locale {
   return locale === 'ar' ? 'en' : 'ar';
 }
 
+export function resolveDefaultLocale(value: string | null | undefined): Locale {
+  return value === 'en' ? 'en' : 'ar';
+}
+
 export function switchLocalePath(pathname: string, locale: Locale) {
   const target = targetLocale(locale);
   const pieces = pathname.split('/').filter(Boolean);

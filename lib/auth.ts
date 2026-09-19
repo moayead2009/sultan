@@ -4,9 +4,12 @@ import { verify } from '@node-rs/argon2';
 import { db } from '@/lib/db';
 import { logger } from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { createAuthSession, revokeAuthSession, sessionIsActive } from '@/lib/session';
+import { safeAuthRedirect } from '@/lib/security-url';
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.AUTH_SECRET,
+  useSecureCookies: process.env.NODE_ENV === 'production',
   session: {
     strategy: 'jwt',
     maxAge: 60 * 60 * 12
@@ -63,23 +66,33 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
+    async redirect({ url, baseUrl }) {
+      return safeAuthRedirect(url, baseUrl);
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
         token.status = user.status;
+        const authSession = await createAuthSession(user.id);
+        token.sessionId = authSession.id;
       }
-      if (token.id) {
-        const current = await db.user.findUnique({
-          where: { id: token.id },
-          select: { role: true, status: true }
+
+      if (token.id && token.sessionId) {
+        const current = await db.authSession.findUnique({
+          where: { id: token.sessionId },
+          include: {
+            user: { select: { id: true, role: true, status: true } }
+          }
         });
-        if (!current || current.status !== 'ACTIVE') {
+        if (!current || current.userId !== token.id || !sessionIsActive(current)) {
           token.status = 'DISABLED';
         } else {
-          token.role = current.role;
-          token.status = current.status;
+          token.role = current.user.role;
+          token.status = current.user.status;
         }
+      } else if (token.id) {
+        token.status = 'DISABLED';
       }
       return token;
     },
@@ -88,8 +101,15 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id;
         session.user.role = token.role ?? 'ADMIN';
         session.user.status = token.status ?? 'DISABLED';
+        session.user.sessionId = token.sessionId;
       }
       return session;
+    }
+  },
+  events: {
+    async signOut(message) {
+      const token = 'token' in message ? message.token : null;
+      if (token?.sessionId) await revokeAuthSession(token.sessionId, token.id);
     }
   }
 };

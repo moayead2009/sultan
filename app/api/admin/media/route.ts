@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { inspectUpload } from '@/lib/media';
 import { storage } from '@/lib/storage';
 import { logger } from '@/lib/logger';
+import { mediaDeletionBlockReason } from '@/lib/media-usage';
 
 export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
@@ -70,31 +71,56 @@ export async function DELETE(request: Request) {
   if (!session?.user || session.user.status !== 'ACTIVE') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+  if (session.user.role !== 'OWNER') {
+    return NextResponse.json({ error: 'Only OWNER can permanently delete media.' }, { status: 403 });
+  }
   const id = new URL(request.url).searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'Missing media id.' }, { status: 400 });
 
-  const publishedUsage = await db.mediaUsage.findFirst({
-    where: { mediaAssetId: id, isPublishedReference: true }
-  });
-  if (publishedUsage) {
-    return NextResponse.json(
-      { error: 'Media referenced by published content cannot be deleted.' },
-      { status: 409 }
-    );
-  }
-  const anyUsage = await db.mediaUsage.findFirst({ where: { mediaAssetId: id } });
-  if (anyUsage) {
-    return NextResponse.json({ error: 'Detach this media before deletion.' }, { status: 409 });
-  }
+  try {
+    await db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT "id" FROM "MediaAsset" WHERE "id" = ${id} FOR UPDATE`;
+      const asset = await tx.mediaAsset.findUnique({ where: { id } });
+      if (!asset) throw new Error('Media asset was not found.');
 
-  await db.mediaAsset.delete({ where: { id } });
-  await db.auditLog.create({
-    data: {
-      actorUserId: session.user.id,
-      action: 'DELETE',
-      entityType: 'MediaAsset',
-      entityId: id
-    }
-  });
-  return NextResponse.json({ ok: true });
+      const [publishedUsageCount, usageCount, directCounts] = await Promise.all([
+        tx.mediaUsage.count({ where: { mediaAssetId: id, isPublishedReference: true } }),
+        tx.mediaUsage.count({ where: { mediaAssetId: id } }),
+        Promise.all([
+          tx.siteSettings.count({ where: { OR: [{ primaryLogoId: id }, { alternateLogoId: id }, { faviconId: id }, { defaultOgImageId: id }] } }),
+          tx.pageSection.count({ where: { OR: [{ primaryMediaId: id }, { secondaryMediaId: id }] } }),
+          tx.pageSectionMedia.count({ where: { mediaId: id } }),
+          tx.service.count({ where: { OR: [{ iconMediaId: id }, { coverMediaId: id }] } }),
+          tx.project.count({ where: { OR: [{ coverMediaId: id }, { videoMediaId: id }] } }),
+          tx.projectMedia.count({ where: { mediaId: id } }),
+          tx.client.count({ where: { logoId: id } }),
+          tx.processStep.count({ where: { OR: [{ iconMediaId: id }, { imageMediaId: id }] } }),
+          tx.metric.count({ where: { iconMediaId: id } }),
+          tx.leadershipMember.count({ where: { imageId: id } }),
+          tx.contactPerson.count({ where: { imageId: id } }),
+          tx.seoMetadata.count({ where: { ogImageId: id } })
+        ])
+      ]);
+      const directReferenceCount = directCounts.reduce((sum, count) => sum + count, 0);
+      const blocked = mediaDeletionBlockReason({ publishedUsageCount, usageCount, directReferenceCount });
+      if (blocked === 'published') throw new Error('Media referenced by published content cannot be deleted.');
+      if (blocked === 'referenced') throw new Error('Detach this media before deletion.');
+
+      await storage.delete(asset.storageKey);
+      await tx.mediaAsset.delete({ where: { id } });
+      await tx.auditLog.create({
+        data: {
+          actorUserId: session.user.id,
+          action: 'DELETE',
+          entityType: 'MediaAsset',
+          entityId: id
+        }
+      });
+    });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unable to delete media.';
+    const conflict = message.includes('referenced') || message.includes('Detach');
+    return NextResponse.json({ error: message }, { status: conflict ? 409 : 400 });
+  }
 }

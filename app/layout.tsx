@@ -10,8 +10,9 @@ export const metadata: Metadata = {
   description: 'Solutions Gate'
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const locale = headers().get('x-route-locale') === 'ar' ? 'ar' : 'en';
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const requestHeaders = await headers();
+  const locale = requestHeaders.get('x-route-locale') === 'ar' ? 'ar' : 'en';
   return (
     <html lang={locale} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
       <body>{children}</body>

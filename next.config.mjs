@@ -14,9 +14,7 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  experimental: {
-    serverComponentsExternalPackages: ['@node-rs/argon2']
-  },
+  serverExternalPackages: ['@node-rs/argon2'],
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [{ protocol: 'https', hostname: '**' }]
@@ -31,6 +29,10 @@ const nextConfig = {
           { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
           { key: 'Cache-Control', value: 'private, no-store, max-age=0' }
         ]
+      },
+      {
+        source: '/admin/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }]
       }
     ];
   }
