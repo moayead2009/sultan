@@ -22,7 +22,7 @@ const plain = (value: string) => sanitizeHtml(value, { allowedTags: [], allowedA
 export async function persistInquiry(input: unknown) {
   const parsed = inquirySchema.parse(input);
   const service = parsed.serviceId ? await db.service.findFirst({ where: { id: parsed.serviceId, status: 'PUBLISHED' }, select: { id: true } }) : null;
-  const retentionUntil = env.NODE_ENV === 'test' ? null : null;
+  const retentionUntil = null;
   const submission = await db.contactSubmission.create({
     data: {
       name: plain(parsed.name),
