@@ -61,14 +61,14 @@ test('owner can edit bilingual page content, order sections, preview, publish an
   const article = page.locator('article.admin-card').filter({ hasText: '/phase3-e2e-page' });
   await expect(article).toBeVisible();
 
-  const enForm = article.locator('form').filter({ has: article.getByRole('heading', { name: 'EN' }) });
+  const enForm = article.getByRole('heading', { name: 'EN' }).locator('xpath=ancestor::form');
   await enForm.locator('input[name="title"]').fill('Phase 3 Test Page Updated');
   await enForm.locator('textarea[name="summary"]').fill('Updated English browser-test content.');
   await enForm.getByRole('button', { name: 'Save EN' }).click();
   await expect(page.locator('article.admin-card').filter({ hasText: '/phase3-e2e-page' })).toBeVisible();
 
   const refreshed = page.locator('article.admin-card').filter({ hasText: '/phase3-e2e-page' });
-  const arForm = refreshed.locator('form').filter({ has: refreshed.getByRole('heading', { name: 'AR' }) });
+  const arForm = refreshed.getByRole('heading', { name: 'AR' }).locator('xpath=ancestor::form');
   await arForm.locator('input[name="title"]').fill('صفحة اختبار المرحلة الثالثة المحدثة');
   await arForm.locator('textarea[name="summary"]').fill('محتوى عربي محدث لاختبار المتصفح.');
   await arForm.getByRole('button', { name: 'Save AR' }).click();
