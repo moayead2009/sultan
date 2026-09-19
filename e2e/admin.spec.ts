@@ -179,6 +179,24 @@ test('SEO editing and inquiry status management work through admin UI', async ({
   await db.contactSubmission.delete({ where: { id: inquiry.id } });
 });
 
+
+test('admin remains usable at desktop tablet and mobile widths', async ({ page }) => {
+  await login(page, ownerEmail, ownerPassword);
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 768, height: 1024 },
+    { width: 390, height: 844 }
+  ]) {
+    await page.setViewportSize(viewport);
+    for (const route of ['/admin', '/admin/pages', '/admin/media', '/admin/inquiries']) {
+      await page.goto(route);
+      await expect(page.locator('.admin-main')).toBeVisible();
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      expect(overflow, route + ' at ' + viewport.width).toBeLessThanOrEqual(1);
+    }
+  }
+});
+
 test('unauthenticated media API rejects upload attempts', async ({ request }) => {
   const response = await request.post('/api/admin/media', {
     multipart: {
