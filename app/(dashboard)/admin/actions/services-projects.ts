@@ -16,8 +16,8 @@ function requiredText(formData: FormData, key: string, max = 500) {
   return z.string().trim().min(1).max(max).parse(formData.get(key));
 }
 
-function csv(value: FormDataEntryValue | null) {
-  return String(value ?? '').split(',').map((item) => item.trim()).filter(Boolean);
+function list(formData: FormData, key: string) {
+  return formData.getAll(key).flatMap((value) => String(value).split(',')).map((item) => item.trim()).filter(Boolean);
 }
 
 function optionalInt(formData: FormData, key: string) {
@@ -64,8 +64,8 @@ export async function saveService(formData: FormData) {
   }
   const iconMediaId = optionalText(formData.get('iconMediaId'));
   const coverMediaId = optionalText(formData.get('coverMediaId'));
-  const galleryIds = csv(formData.get('galleryMediaIds'));
-  const relatedIds = csv(formData.get('relatedServiceIds'));
+  const galleryIds = list(formData, 'galleryMediaIds');
+  const relatedIds = list(formData, 'relatedServiceIds');
   const base = {
     categoryId: id.parse(formData.get('categoryId')),
     parentServiceId: optionalText(formData.get('parentServiceId')),
@@ -174,8 +174,8 @@ export async function saveProject(formData: FormData) {
   }));
   const coverMediaId = optionalText(formData.get('coverMediaId'));
   const videoMediaId = optionalText(formData.get('videoMediaId'));
-  const galleryIds = csv(formData.get('galleryMediaIds'));
-  const serviceIds = csv(formData.get('serviceIds'));
+  const galleryIds = list(formData, 'galleryMediaIds');
+  const serviceIds = list(formData, 'serviceIds');
   if (status === 'PUBLISHED') {
     const gate = validatePublishable('project', { translations, hasMedia: Boolean(coverMediaId || galleryIds.length) });
     if (!gate.ok) throw new Error('Project publication blocked: ' + gate.missing.join(', '));
