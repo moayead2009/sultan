@@ -14,11 +14,26 @@ export function isProtectedRedirectPath(pathname: string) {
   return protectedPrefixes.some((prefix) => value === prefix || value.startsWith(prefix + '/'));
 }
 
-function pathOnly(value: string) {
-  return new URL(value, 'https://redirect.local').pathname;
+function localTargetPath(value: string, applicationUrl?: string) {
+  if (value.startsWith('/') && !value.startsWith('//')) {
+    return new URL(value, 'https://redirect.local').pathname;
+  }
+  if (!applicationUrl) return null;
+
+  try {
+    const target = new URL(value);
+    const application = new URL(applicationUrl);
+    return target.origin === application.origin ? target.pathname : null;
+  } catch {
+    return null;
+  }
 }
 
-export function validateRedirectRule(candidate: RedirectRuleLike, existing: RedirectRuleLike[] = []) {
+export function validateRedirectRule(
+  candidate: RedirectRuleLike,
+  existing: RedirectRuleLike[] = [],
+  applicationUrl?: string
+) {
   if (!candidate.fromPath.startsWith('/') || candidate.fromPath.startsWith('//') || candidate.fromPath.includes('\\')) {
     throw new Error('Redirect source must be a safe absolute application path.');
   }
@@ -35,8 +50,7 @@ export function validateRedirectRule(candidate: RedirectRuleLike, existing: Redi
     throw new Error('Redirect target must be relative or HTTP(S).');
   }
 
-  const targetIsLocal = candidate.toPath.startsWith('/') && !candidate.toPath.startsWith('//');
-  const candidateTargetPath = targetIsLocal ? pathOnly(candidate.toPath) : null;
+  const candidateTargetPath = localTargetPath(candidate.toPath, applicationUrl);
   if (candidateTargetPath && isProtectedRedirectPath(candidateTargetPath)) {
     throw new Error('Redirect rules cannot target protected application paths.');
   }
@@ -50,8 +64,8 @@ export function validateRedirectRule(candidate: RedirectRuleLike, existing: Redi
   const graph = new Map<string, string>();
   for (const rule of rules) {
     if (isProtectedRedirectPath(rule.fromPath)) continue;
-    if (!rule.toPath.startsWith('/') || rule.toPath.startsWith('//')) continue;
-    graph.set(rule.fromPath, pathOnly(rule.toPath));
+    const targetPath = localTargetPath(rule.toPath, applicationUrl);
+    if (targetPath) graph.set(rule.fromPath, targetPath);
   }
 
   for (const start of graph.keys()) {

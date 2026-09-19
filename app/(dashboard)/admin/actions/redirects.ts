@@ -7,6 +7,7 @@ import { requireAdmin } from '@/lib/authorization';
 import { auditAdmin } from '@/lib/admin-audit';
 import { checkbox } from '@/lib/admin-input';
 import { validateRedirectRule } from '@/lib/redirects';
+import { env } from '@/lib/env';
 
 function parsePaths(formData: FormData) {
   const fromPath = z.string().trim().startsWith('/').max(500).parse(formData.get('fromPath'));
@@ -18,7 +19,7 @@ export async function createRedirect(formData: FormData) {
   await requireAdmin();
   const paths = parsePaths(formData);
   const existing = await db.redirect.findMany();
-  validateRedirectRule({ ...paths, enabled: true }, existing);
+  validateRedirectRule({ ...paths, enabled: true }, existing, env.APP_URL);
   const redirect = await db.redirect.create({
     data: { ...paths, permanent: checkbox(formData.get('permanent')), enabled: true }
   });
@@ -32,7 +33,7 @@ export async function updateRedirect(formData: FormData) {
   const paths = parsePaths(formData);
   const enabled = checkbox(formData.get('enabled'));
   const existing = await db.redirect.findMany();
-  validateRedirectRule({ id, ...paths, enabled }, existing);
+  validateRedirectRule({ id, ...paths, enabled }, existing, env.APP_URL);
   await db.redirect.update({
     where: { id },
     data: { ...paths, permanent: checkbox(formData.get('permanent')), enabled }
