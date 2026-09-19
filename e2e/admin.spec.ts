@@ -109,7 +109,13 @@ test('owner can edit bilingual page content, order sections, preview, publish an
 
   let response = await page.goto('/en/phase3-e2e-page');
   expect(response?.status()).toBe(200);
-  await expect(page.getByRole('heading', { name: 'Phase 3 Test Page Updated' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Phase 3 Test Page Updated' })).toBeVisible();
+  await expect(page.locator('main h1')).toHaveCount(1);
+
+  response = await page.goto('/ar/phase3-e2e-page');
+  expect(response?.status()).toBe(200);
+  await expect(page.getByRole('heading', { level: 1, name: 'صفحة اختبار المرحلة الثالثة المحدثة' })).toBeVisible();
+  await expect(page.locator('main h1')).toHaveCount(1);
 
   await page.goto('/admin/pages?q=phase3-e2e-page');
   page.once('dialog', (dialog) => dialog.accept());
