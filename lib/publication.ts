@@ -78,7 +78,7 @@ export function validateSectionCompleteness(section: {
   }
 
   const hasPrimaryCta = Boolean(section.primaryCtaPageId || section.primaryCtaUrl);
-  const hasSecondaryCta = Boolean(section.secondaryCtaPageId || secondaryCtaUrl);
+  const hasSecondaryCta = Boolean(section.secondaryCtaPageId || section.secondaryCtaUrl);
   if (hasPrimaryCta) missing.push(...hasBothLocales(section.translations, ['primaryCtaLabel']).missing);
   if (hasSecondaryCta) missing.push(...hasBothLocales(section.translations, ['secondaryCtaLabel']).missing);
 
