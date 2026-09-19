@@ -61,7 +61,7 @@ export function CapabilityMatrix({ locale, entities }: { locale: Locale; entitie
   </div>;
 }
 
-export function SectionRenderer({ section, locale, entities, contactFormEnabled = true }: { section: Section; locale: Locale; entities: Entities; contactFormEnabled?: boolean }) {
+export function SectionRenderer({ section, locale, entities, contactFormEnabled = true, contactFormNotice }: { section: Section; locale: Locale; entities: Entities; contactFormEnabled?: boolean; contactFormNotice?: string | null }) {
   const copy = copyFor(section, locale);
   const primaryHref = ctaHref(section, locale, true);
   const secondaryHref = ctaHref(section, locale, false);
@@ -189,7 +189,7 @@ export function SectionRenderer({ section, locale, entities, contactFormEnabled 
   if (section.sectionType === 'contactForm') {
     if (!contactFormEnabled) return null;
     return <section className="public-section contact-form-section"><div className="container-shell narrow"><Heading title={copy?.title} body={copy?.body} />
-      <ContactForm locale={locale} services={entities.services.map((service) => ({ id: service.id, name: service.translation?.name || service.slug }))} turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} />
+      <ContactForm locale={locale} services={entities.services.map((service) => ({ id: service.id, name: service.translation?.name || service.slug }))} turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} notice={contactFormNotice} />
     </div></section>;
   }
 
