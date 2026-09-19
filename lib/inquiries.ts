@@ -12,7 +12,7 @@ const inquirySchema = z.object({
   serviceId: z.string().trim().max(100).optional().default(''),
   subject: z.string().trim().max(180).optional().default(''),
   message: z.string().trim().min(10).max(5000),
-  consent: z.union([z.boolean(), z.literal('on'), z.literal('true')]),
+  consent: z.union([z.literal(true), z.literal('on'), z.literal('true')]),
   locale: z.enum(['en', 'ar']),
   website: z.string().max(0).optional().default('')
 });
