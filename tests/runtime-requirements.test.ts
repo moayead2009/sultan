@@ -20,15 +20,15 @@ describe('Phase 1 production runtime requirements', () => {
     })).toThrow(/NEXTAUTH_URL/);
   });
 
-  it('rejects local production storage and incomplete object storage configuration', () => {
+  it('accepts local storage in production', () => {
     expect(() => assertProductionRuntimeRequirements({
       nodeEnv: 'production',
       nextAuthUrlExplicit: 'https://example.test',
-      storageDriver: 'local',
-      objectStorageBucket: 'media',
-      objectStoragePublicUrl: 'https://media.example.test'
-    })).toThrow(/STORAGE_DRIVER=s3/);
+      storageDriver: 'local'
+    })).not.toThrow();
+  });
 
+  it('rejects incomplete object storage configuration', () => {
     expect(() => assertProductionRuntimeRequirements({
       nodeEnv: 'production',
       nextAuthUrlExplicit: 'https://example.test',
