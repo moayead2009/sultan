@@ -8,6 +8,8 @@ import { auditAdmin } from '@/lib/admin-audit';
 import { checkbox, integer, optionalText } from '@/lib/admin-input';
 import { replaceMediaUsage, setOwnerUsagePublication, type MediaUsageInput } from '@/lib/media-usage';
 import { validatePublishable } from '@/lib/publication';
+import { validateRedirectRule } from '@/lib/redirects';
+import { env } from '@/lib/env';
 
 const id = z.string().trim().min(1);
 const slug = z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
@@ -45,6 +47,12 @@ export async function saveServiceCategory(formData: FormData) {
   await auditAdmin(rowId ? 'UPDATE' : 'CREATE', 'ServiceCategory', row.id);
   revalidatePath('/admin/service-categories');
   revalidatePath('/admin/services');
+  if (previousSlug && previousSlug !== row.slug) {
+    revalidatePath('/en/services/' + previousSlug);
+    revalidatePath('/ar/services/' + previousSlug);
+  }
+  revalidatePath('/en/services/' + row.slug);
+  revalidatePath('/ar/services/' + row.slug);
 }
 
 export async function saveService(formData: FormData) {
@@ -79,7 +87,10 @@ export async function saveService(formData: FormData) {
     publishedAt: status === 'PUBLISHED' ? new Date() : null
   };
 
+  let previousSlug: string | null = null;
   const row = await db.$transaction(async (tx) => {
+    const existing = rowId ? await tx.service.findUniqueOrThrow({ where: { id: rowId }, select: { slug: true } }) : null;
+    previousSlug = existing?.slug ?? null;
     const service = rowId ? await tx.service.update({ where: { id: rowId }, data: base }) : await tx.service.create({ data: base });
     for (const copy of translations) {
       await tx.serviceTranslation.upsert({
@@ -101,6 +112,22 @@ export async function saveService(formData: FormData) {
     if (coverMediaId) usages.push({ mediaAssetId: coverMediaId, usageRole: 'cover' });
     galleryIds.forEach((mediaAssetId, index) => usages.push({ mediaAssetId, usageRole: 'gallery:' + index }));
     await replaceMediaUsage(tx, 'Service', service.id, usages, status === 'PUBLISHED');
+    if (existing && existing.slug !== service.slug) {
+      const rules = await tx.redirect.findMany();
+      for (const locale of ['en','ar'] as const) {
+        const candidate = {
+          fromPath: '/' + locale + '/services/' + existing.slug,
+          toPath: '/' + locale + '/services/' + service.slug,
+          enabled: true
+        };
+        validateRedirectRule(candidate, rules.filter((rule) => rule.fromPath !== candidate.fromPath), env.APP_URL);
+        await tx.redirect.upsert({
+          where: { fromPath: candidate.fromPath },
+          create: { ...candidate, permanent: true },
+          update: { toPath: candidate.toPath, enabled: true, permanent: true }
+        });
+      }
+    }
     return service;
   });
   await auditAdmin(rowId ? 'UPDATE' : 'CREATE', 'Service', row.id, { status });
@@ -194,7 +221,10 @@ export async function saveProject(formData: FormData) {
     publishedAt: status === 'PUBLISHED' ? new Date() : null
   };
 
+  let previousSlug: string | null = null;
   const row = await db.$transaction(async (tx) => {
+    const existing = rowId ? await tx.project.findUniqueOrThrow({ where: { id: rowId }, select: { slug: true } }) : null;
+    previousSlug = existing?.slug ?? null;
     const project = rowId ? await tx.project.update({ where: { id: rowId }, data: base }) : await tx.project.create({ data: base });
     for (const copy of translations) {
       await tx.projectTranslation.upsert({
@@ -212,10 +242,32 @@ export async function saveProject(formData: FormData) {
     if (videoMediaId) usages.push({ mediaAssetId: videoMediaId, usageRole: 'video' });
     galleryIds.forEach((mediaAssetId, index) => usages.push({ mediaAssetId, usageRole: 'gallery:' + index }));
     await replaceMediaUsage(tx, 'Project', project.id, usages, status === 'PUBLISHED');
+    if (existing && existing.slug !== project.slug) {
+      const rules = await tx.redirect.findMany();
+      for (const locale of ['en','ar'] as const) {
+        const candidate = {
+          fromPath: '/' + locale + '/projects/' + existing.slug,
+          toPath: '/' + locale + '/projects/' + project.slug,
+          enabled: true
+        };
+        validateRedirectRule(candidate, rules.filter((rule) => rule.fromPath !== candidate.fromPath), env.APP_URL);
+        await tx.redirect.upsert({
+          where: { fromPath: candidate.fromPath },
+          create: { ...candidate, permanent: true },
+          update: { toPath: candidate.toPath, enabled: true, permanent: true }
+        });
+      }
+    }
     return project;
   });
   await auditAdmin(rowId ? 'UPDATE' : 'CREATE', 'Project', row.id, { status });
   revalidatePath('/admin/projects');
+  if (previousSlug && previousSlug !== row.slug) {
+    revalidatePath('/en/projects/' + previousSlug);
+    revalidatePath('/ar/projects/' + previousSlug);
+  }
+  revalidatePath('/en/projects/' + row.slug);
+  revalidatePath('/ar/projects/' + row.slug);
 }
 
 export async function setProjectStatus(formData: FormData) {
