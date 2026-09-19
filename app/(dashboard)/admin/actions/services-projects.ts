@@ -10,6 +10,7 @@ import { replaceMediaUsage, setOwnerUsagePublication, type MediaUsageInput } fro
 import { validatePublishable } from '@/lib/publication';
 import { validateRedirectRule } from '@/lib/redirects';
 import { env } from '@/lib/env';
+import { isSafeHttpOrRelativeUrl } from '@/lib/security-url';
 
 const id = z.string().trim().min(1);
 const slug = z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
@@ -68,13 +69,15 @@ export async function saveService(formData: FormData) {
   const coverMediaId = optionalText(formData.get('coverMediaId'));
   const galleryIds = list(formData, 'galleryMediaIds');
   const relatedIds = list(formData, 'relatedServiceIds');
+  const primaryCtaUrl = optionalText(formData.get('primaryCtaUrl'));
+  if (primaryCtaUrl && !isSafeHttpOrRelativeUrl(primaryCtaUrl)) throw new Error('Service CTA URL must be HTTP(S) or an application-relative path.');
   const base = {
     categoryId: id.parse(formData.get('categoryId')),
     parentServiceId: optionalText(formData.get('parentServiceId')),
     slug: slug.parse(formData.get('slug')),
     iconMediaId,
     coverMediaId,
-    primaryCtaUrl: optionalText(formData.get('primaryCtaUrl')),
+    primaryCtaUrl,
     sortOrder: integer(formData.get('sortOrder')),
     featured: checkbox(formData.get('featured')),
     status,
