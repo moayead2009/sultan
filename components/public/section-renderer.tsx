@@ -100,6 +100,7 @@ export function SectionRenderer({ section, locale, entities, contactFormEnabled 
     if (!services.length) return null;
     return <section className="public-section"><div className="container-shell"><Heading title={copy?.title} body={copy?.body} />
       <div className="card-grid">{services.map((service) => <Link className="service-card" href={`/${locale}/services/${service.slug}`} key={service.id}>
+        {service.coverMedia ? <PublicImage asset={service.coverMedia} locale={locale} className="service-card__image" /> : null}
         <span className="card-index">{String(service.sortOrder).padStart(2,'0')}</span>
         <h3>{service.translation?.name}</h3><p>{service.translation?.shortDescription}</p><span className="text-link">{locale === 'ar' ? 'استكشف الخدمة' : 'Explore service'} <b aria-hidden="true">↗</b></span>
       </Link>)}</div>
@@ -118,6 +119,7 @@ export function SectionRenderer({ section, locale, entities, contactFormEnabled 
       <div className="service-groups">{[...groups.values()].map((services) => <section className="service-group" key={services[0].categoryId}>
         <div className="service-group__heading"><h3>{services[0].categoryTranslation?.name}</h3>{services[0].categoryTranslation?.shortDescription ? <p>{services[0].categoryTranslation.shortDescription}</p> : null}</div>
         <div className="card-grid">{services.map((service) => <Link className="service-card" href={`/${locale}/services/${service.slug}`} key={service.id}>
+          {service.coverMedia ? <PublicImage asset={service.coverMedia} locale={locale} className="service-card__image" /> : null}
           <span className="card-index">{String(service.sortOrder).padStart(2,'0')}</span><h3>{service.translation?.name}</h3><p>{service.translation?.shortDescription}</p><span className="text-link">{locale === 'ar' ? 'استكشف الخدمة' : 'Explore service'} <b aria-hidden="true">↗</b></span>
         </Link>)}</div>
       </section>)}</div>
@@ -191,6 +193,10 @@ export function SectionRenderer({ section, locale, entities, contactFormEnabled 
     return <section className="public-section contact-form-section"><div className="container-shell narrow"><Heading title={copy?.title} body={copy?.body} />
       <ContactForm locale={locale} services={entities.services.map((service) => ({ id: service.id, name: service.translation?.name || service.slug }))} turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} notice={contactFormNotice} />
     </div></section>;
+  }
+
+  if (section.sectionType === 'richText') {
+    return <section className="public-section"><div className="container-shell narrow"><Heading title={copy?.title} eyebrow={copy?.subtitle} body={copy?.body} /></div></section>;
   }
 
   if (section.sectionType === 'gallery') {
