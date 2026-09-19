@@ -9,6 +9,7 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     services:
       postgres:
         image: postgres:16-alpine
@@ -33,6 +34,7 @@ jobs:
       OBJECT_STORAGE_REGION: auto
       OBJECT_STORAGE_BUCKET: ci-media
       OBJECT_STORAGE_PUBLIC_URL: https://media.example.invalid
+      MAIL_PROVIDER: none
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -41,6 +43,8 @@ jobs:
           cache: npm
       - name: Clean install
         run: npm ci
+      - name: Production dependency audit
+        run: npm audit --omit=dev --audit-level=high
       - name: Prisma generate
         run: npm run db:generate
       - name: Fresh database migration
@@ -51,7 +55,30 @@ jobs:
         run: npm run lint
       - name: Typecheck
         run: npm run typecheck
-      - name: Test suite
+      - name: Unit and integration tests
         run: npm test
+      - name: Install browser engines
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Browser E2E, accessibility and responsive matrix
+        run: npm run test:e2e
       - name: Production build
         run: npm run build
+      - name: Production performance budgets
+        shell: bash
+        run: |
+          npm run start > /tmp/solutions-gate-next.log 2>&1 &
+          APP_PID=$!
+          trap 'kill $APP_PID 2>/dev/null || true' EXIT
+          READY=0
+          for i in {1..45}; do
+            if curl --fail --silent http://localhost:3000/en > /dev/null; then
+              READY=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY" -ne 1 ]; then
+            cat /tmp/solutions-gate-next.log
+            exit 1
+          fi
+          npx playwright test --config=playwright.performance.config.ts
