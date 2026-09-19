@@ -41,6 +41,7 @@ export function AdminShell({
 }) {
   return (
     <div className="admin-shell">
+      <a className="skip-link" href="#admin-main">Skip to administration content</a>
       <aside className="admin-sidebar">
         <strong>Solutions Gate CMS</strong>
         <p style={{ opacity: 0.75 }}>{userName}</p>
@@ -51,7 +52,7 @@ export function AdminShell({
           <Link href="/api/auth/signout">Sign out</Link>
         </nav>
       </aside>
-      <main className="admin-main">{children}</main>
+      <main className="admin-main" id="admin-main">{children}</main>
     </div>
   );
 }
