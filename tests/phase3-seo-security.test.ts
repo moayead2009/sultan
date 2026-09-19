@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import sitemap from '@/app/sitemap';
 import robots from '@/app/robots';
 import { inspectUpload } from '@/lib/media';
-import { siteStructuredData, serviceStructuredData } from '@/components/public/json-ld';
+import { siteStructuredData, serviceStructuredData } from '@/lib/structured-data';
 
 describe('Phase 3 SEO discovery infrastructure', () => {
   it('publishes only approved public URLs in sitemap', async () => {
