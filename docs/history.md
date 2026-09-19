@@ -11,7 +11,6 @@
 - Implemented authenticated noindex draft preview, page publication gates, media upload validation/storage abstraction and protected media deletion.
 - Kept owner-confirmation-only information unpublished/configurable instead of inventing it.
 
-
 ## 2026-09-19 — Phase 1 independent-audit remediation
 
 - Completed Navigation CMS create/edit/enable-disable/OWNER-delete, EN/AR labels, safe internal/custom destinations, ordering and nested parent relationships.
@@ -26,7 +25,6 @@
 - Committed the npm lockfile and changed CI to a clean npm-ci + fresh migration/seed + lint/typecheck/test/build pipeline.
 - Added focused Phase 1 remediation tests for authorization boundaries, authentication URL/session safety, publication completeness, media protection, navigation validation and localization/SEO primitives.
 
-
 ## 2026-09-19 — Phase 2 public website and business CMS
 
 - Replaced the public foundation placeholder with CMS-driven bilingual English/Arabic routes for Home, About, Services, Projects, Capabilities, Clients and Contact, plus service/project detail routes, breadcrumbs, equivalent-page language switching, responsive navigation/footer, localized metadata and localized 404 behavior.
@@ -39,7 +37,6 @@
 - Implemented persisted contact inquiries with client/server validation, sanitization, honeypot, rate limiting, optional Turnstile, optional Resend notification after persistence, inquiry status management and configurable factual form notices.
 - Added source-gate and inquiry-persistence regression tests for Phase 2.
 
-
 ## 2026-09-19 — Phase 2 completion fixes: preview and source assets
 
 - Fixed the authenticated preview route to bind the validated locale from resolved route parameters; EN and AR previews now use the same validated route-locale path.
@@ -49,3 +46,24 @@
 - Removed the public footer's temporary SG mark when the CMS source logo is available, and added source covers to public service cards.
 - Added `docs/source-assets.md` as the extraction/provenance/publication-gate register.
 - Kept profile project collages and the strategic-client logo grid out of public CMS seed data because their identities/details remain subject to the approved V2 confirmation gates.
+
+## 2026-09-19 — Phase 3 security, SEO, accessibility and quality gates
+
+- Hardened external/public URL validation, same-origin CMS mutation handling, media upload processing, production security headers, contact rate limiting and structured-log redaction.
+- Completed sitemap/robots/structured-data and localized SEO verification while keeping unverified content out of discovery surfaces.
+- Added automatic localized slug redirects and protected admin/preview behavior.
+- Expanded browser E2E across CMS authorization/CRUD/preview/media/SEO/inquiries and public responsive behavior, with console-error detection and cross-browser coverage.
+- Added automated accessibility checks, skip navigation, contrast/RTL/document-language fixes and one-primary-heading enforcement including CMS pages without hero sections.
+- Added production performance budgets and made the CI pipeline gate dependency audit, migrations/seed, lint, typecheck, unit/integration tests, E2E, accessibility/responsive/browser testing, production build and performance.
+- Upgraded vulnerable test/tooling dependencies and completed remediation until the approved Phase 3 HEAD `a85164e0991c31629c882eece7ee96f64f81cd1e` passed the full CI.
+
+## 2026-09-19 — Phase 4 production readiness and handoff
+
+- Added a provider-neutral production environment preflight that validates PostgreSQL, auth-secret, HTTPS application URL, S3-compatible storage and optional integration contracts without printing secrets.
+- Added dependency-free liveness and database-backed readiness endpoints for deployment traffic gating and external monitoring.
+- Added secure PostgreSQL backup and explicitly confirmed destructive restore scripts, plus repository ignore protection for local backup artifacts.
+- Documented architecture, schema/migrations, auth/bootstrap, storage, inquiry email, CMS/translation/SEO/redirect behavior, production environment, deployment sequence, backup/media recovery, restore testing, monitoring, logging/privacy and rollback.
+- Added a final handoff covering stack, permissions, environment ownership, CMS workflow, security posture, verification evidence, known limitations and unresolved owner-confirmation content.
+- Strengthened structured-log redaction for nested secret/PII-named fields.
+- Extended CI with the production-preflight contract, backup/restore shell syntax validation and readiness/liveness startup checks while preserving all Phase 1–3 verification stages.
+- Did not add production secrets, merge to main or perform deployment.

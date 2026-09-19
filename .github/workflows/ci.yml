@@ -55,6 +55,18 @@ jobs:
         run: npx prisma migrate reset --force --skip-seed
       - name: Seed
         run: npm run db:seed
+      - name: Production environment preflight contract
+        env:
+          AUTH_SECRET: ci-production-secret-with-more-than-thirty-two-characters
+          APP_URL: https://ci.example.invalid
+          NEXTAUTH_URL: https://ci.example.invalid
+          STORAGE_DRIVER: s3
+          OBJECT_STORAGE_BUCKET: ci-media
+          OBJECT_STORAGE_PUBLIC_URL: https://media.example.invalid
+          MAIL_PROVIDER: none
+        run: npm run ops:preflight
+      - name: Backup and restore script syntax
+        run: bash -n scripts/backup-db.sh scripts/restore-db.sh
       - name: Lint
         run: npm run lint
       - name: Typecheck
@@ -75,7 +87,7 @@ jobs:
           trap 'kill $APP_PID 2>/dev/null || true' EXIT
           READY=0
           for i in {1..45}; do
-            if curl --fail --silent http://localhost:3000/en > /dev/null; then
+            if curl --fail --silent http://localhost:3000/api/ready > /dev/null; then
               READY=1
               break
             fi
@@ -85,4 +97,5 @@ jobs:
             cat /tmp/solutions-gate-next.log
             exit 1
           fi
+          curl --fail --silent http://localhost:3000/api/health > /dev/null
           npx playwright test --config=playwright.performance.config.ts

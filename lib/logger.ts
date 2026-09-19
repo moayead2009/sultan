@@ -1,18 +1,27 @@
 type LogLevel = 'info' | 'warn' | 'error';
 
-const redactKeys = new Set([
-  'password',
-  'passwordHash',
-  'session',
-  'token',
-  'secret',
-  'messageBody',
-  'inquiryMessage'
-]);
+const sensitiveKey = /(password|secret|token|authorization|cookie|session|email|phone|address|name|message|body)/i;
+
+function sanitizeValue(value: unknown, depth = 0): unknown {
+  if (depth > 4) return '[REDACTED_DEPTH]';
+  if (Array.isArray(value)) return value.map((item) => sanitizeValue(item, depth + 1));
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, nested]) => [
+        key,
+        sensitiveKey.test(key) ? '[REDACTED]' : sanitizeValue(nested, depth + 1)
+      ])
+    );
+  }
+  return value;
+}
 
 function sanitize(meta: Record<string, unknown> = {}) {
   return Object.fromEntries(
-    Object.entries(meta).map(([key, value]) => [key, redactKeys.has(key) ? '[REDACTED]' : value])
+    Object.entries(meta).map(([key, value]) => [
+      key,
+      sensitiveKey.test(key) ? '[REDACTED]' : sanitizeValue(value)
+    ])
   );
 }
 
