@@ -27,7 +27,7 @@ export default async function ProjectDetail({ params }: { params: Promise<{ loca
     <JsonLd data={breadcrumbStructuredData(baseUrl, locale, breadcrumbs)} />
     <SiteHeader data={chrome} />
     <Breadcrumbs locale={locale} items={breadcrumbs} />
-    <main>
+    <main id="main-content">
       <section className="detail-hero"><div className="container-shell detail-hero__grid"><div>
         {project.categoryTranslation?.name ? <p className="eyebrow">{project.categoryTranslation.name}</p> : null}
         <h1>{project.translation?.title}</h1><p>{project.translation?.summary}</p>
