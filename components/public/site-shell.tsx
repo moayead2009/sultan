@@ -50,11 +50,12 @@ export function SiteHeader({ data }: { data: Awaited<ReturnType<typeof getSiteCh
 export function SiteFooter({ data }: { data: Awaited<ReturnType<typeof getSiteChrome>> }) {
   const { settings, footer, social, locale } = data;
   const brand = locale === 'ar' ? settings?.brandNameArabic || 'بوابة الحلول للفعاليات' : settings?.brandNameEnglish || 'Solutions Gate';
+  const footerLogo = settings?.alternateLogo || settings?.primaryLogo;
   return (
     <footer className="site-footer">
       <div className="container-shell footer-grid">
         <div>
-          <div className="brand-lockup footer-brand"><span className="brand-mark" aria-hidden="true">SG</span><strong>{brand}</strong></div>
+          <div className="brand-lockup footer-brand">{footerLogo ? <img src={footerLogo.publicUrl} alt="" className="brand-lockup__logo footer-logo" /> : <span className="brand-mark" aria-hidden="true">SG</span>}<strong>{brand}</strong></div>
           {settings?.websiteUrl ? <p className="muted">{settings.websiteUrl.replace(/^https?:\/\//, '')}</p> : null}
         </div>
         <nav aria-label={locale === 'ar' ? 'روابط التذييل' : 'Footer links'}>
