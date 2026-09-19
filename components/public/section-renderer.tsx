@@ -72,7 +72,7 @@ export function SectionRenderer({ section, locale, entities, contactFormEnabled 
   if (section.sectionType === 'hero') {
     return <section className="hero-section">
       <div className="hero-geometry" aria-hidden="true" />
-      {section.primaryMedia ? <div className="hero-media"><PublicImage asset={section.primaryMedia} locale={locale} /></div> : null}
+      {section.primaryMedia ? <div className="hero-media"><PublicImage asset={section.primaryMedia} locale={locale} sizes="100vw" eager /></div> : null}
       <div className="container-shell hero-content">
         {copy?.subtitle ? <p className="eyebrow">{copy.subtitle}</p> : null}
         <h1>{copy?.title}</h1>
@@ -100,7 +100,7 @@ export function SectionRenderer({ section, locale, entities, contactFormEnabled 
     if (!services.length) return null;
     return <section className="public-section"><div className="container-shell"><Heading title={copy?.title} body={copy?.body} />
       <div className="card-grid">{services.map((service) => <Link className="service-card" href={`/${locale}/services/${service.slug}`} key={service.id}>
-        {service.coverMedia ? <PublicImage asset={service.coverMedia} locale={locale} className="service-card__image" /> : null}
+        {service.coverMedia ? <PublicImage asset={service.coverMedia} locale={locale} className="service-card__image" sizes="(max-width: 760px) 100vw, (max-width: 980px) 50vw, 33vw" /> : null}
         <span className="card-index">{String(service.sortOrder).padStart(2,'0')}</span>
         <h3>{service.translation?.name}</h3><p>{service.translation?.shortDescription}</p><span className="text-link">{locale === 'ar' ? 'استكشف الخدمة' : 'Explore service'} <b aria-hidden="true">↗</b></span>
       </Link>)}</div>
@@ -119,7 +119,7 @@ export function SectionRenderer({ section, locale, entities, contactFormEnabled 
       <div className="service-groups">{[...groups.values()].map((services) => <section className="service-group" key={services[0].categoryId}>
         <div className="service-group__heading"><h3>{services[0].categoryTranslation?.name}</h3>{services[0].categoryTranslation?.shortDescription ? <p>{services[0].categoryTranslation.shortDescription}</p> : null}</div>
         <div className="card-grid">{services.map((service) => <Link className="service-card" href={`/${locale}/services/${service.slug}`} key={service.id}>
-          {service.coverMedia ? <PublicImage asset={service.coverMedia} locale={locale} className="service-card__image" /> : null}
+          {service.coverMedia ? <PublicImage asset={service.coverMedia} locale={locale} className="service-card__image" sizes="(max-width: 760px) 100vw, (max-width: 980px) 50vw, 33vw" /> : null}
           <span className="card-index">{String(service.sortOrder).padStart(2,'0')}</span><h3>{service.translation?.name}</h3><p>{service.translation?.shortDescription}</p><span className="text-link">{locale === 'ar' ? 'استكشف الخدمة' : 'Explore service'} <b aria-hidden="true">↗</b></span>
         </Link>)}</div>
       </section>)}</div>
