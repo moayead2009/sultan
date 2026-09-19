@@ -12,6 +12,7 @@ export function SiteHeader({ data }: { data: Awaited<ReturnType<typeof getSiteCh
   const roots = main?.items.filter((item) => !item.parentId) ?? [];
   return (
     <header className="site-header">
+      <a className="skip-link" href="#main-content">{locale === 'ar' ? 'تجاوز إلى المحتوى الرئيسي' : 'Skip to main content'}</a>
       <div className="container-shell site-header__inner">
         <Link className="brand-lockup" href={`/${locale}`} aria-label={brand}>
           {settings?.primaryLogo ? <Image src={settings.primaryLogo.publicUrl} alt="" width={48} height={48} sizes="48px" className="brand-lockup__logo" /> : <span className="brand-mark" aria-hidden="true">SG</span>}
