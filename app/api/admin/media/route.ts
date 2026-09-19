@@ -6,8 +6,12 @@ import { inspectUpload } from '@/lib/media';
 import { storage } from '@/lib/storage';
 import { logger } from '@/lib/logger';
 import { mediaDeletionBlockReason } from '@/lib/media-usage';
+import { isTrustedMutationOrigin } from '@/lib/request-security';
 
 export async function POST(request: Request) {
+  if (!isTrustedMutationOrigin(request)) {
+    return NextResponse.json({ error: 'Forbidden origin.' }, { status: 403 });
+  }
   const session = await getServerSession(authOptions);
   if (!session?.user || session.user.status !== 'ACTIVE') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -67,6 +71,9 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  if (!isTrustedMutationOrigin(request)) {
+    return NextResponse.json({ error: 'Forbidden origin.' }, { status: 403 });
+  }
   const session = await getServerSession(authOptions);
   if (!session?.user || session.user.status !== 'ACTIVE') {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
