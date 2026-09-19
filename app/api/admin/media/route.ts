@@ -34,7 +34,7 @@ export async function POST(request: Request) {
         publicUrl: stored.publicUrl,
         originalFilename: file.name.slice(0, 255),
         mimeType: inspected.mimeType,
-        byteSize: file.size,
+        byteSize: inspected.byteSize,
         width: inspected.width,
         height: inspected.height,
         checksum: inspected.checksum,
