@@ -7,6 +7,7 @@ import { requireAdmin } from '@/lib/authorization';
 import { auditAdmin } from '@/lib/admin-audit';
 import { checkbox, integer, optionalText } from '@/lib/admin-input';
 import { validatePublishable } from '@/lib/publication';
+import { isSafeHttpUrl } from '@/lib/security-url';
 
 const id = z.string().trim().min(1);
 const slug = z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
@@ -116,10 +117,12 @@ export async function saveSeo(formData: FormData) {
   const ownerType = z.enum(['Page','Service','Project']).parse(formData.get('ownerType'));
   const ownerId = id.parse(formData.get('ownerId'));
   const locale = z.enum(['en','ar']).parse(formData.get('locale'));
+  const canonicalOverride = optionalText(formData.get('canonicalOverride'));
+  if (canonicalOverride && !isSafeHttpUrl(canonicalOverride)) throw new Error('Canonical override must be an absolute HTTP(S) URL.');
   const data = {
     title: requiredText(formData, 'title'),
     description: requiredText(formData, 'description', 3000),
-    canonicalOverride: optionalText(formData.get('canonicalOverride')),
+    canonicalOverride,
     robots: requiredText(formData, 'robots', 100),
     ogTitle: optionalText(formData.get('ogTitle')),
     ogDescription: optionalText(formData.get('ogDescription')),
