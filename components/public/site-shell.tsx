@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import type { Locale } from '@/lib/i18n';
 import { localized, navigationHref } from '@/lib/public-site';
+import type { getSiteChrome } from '@/lib/public-site';
+import { LanguageSwitch } from '@/components/public/language-switch';
 
-export function SiteHeader({ data }: { data: Awaited<ReturnType<typeof import('@/lib/public-site').getSiteChrome>> }) {
+export function SiteHeader({ data }: { data: Awaited<ReturnType<typeof getSiteChrome>> }) {
   const { settings, main, locale } = data;
   const other = locale === 'ar' ? 'en' : 'ar';
   const brand = locale === 'ar' ? settings?.brandNameArabic || 'بوابة الحلول للفعاليات' : settings?.brandNameEnglish || 'Solutions Gate';
@@ -29,14 +31,14 @@ export function SiteHeader({ data }: { data: Awaited<ReturnType<typeof import('@
           })}
         </nav>
         <div className="header-actions">
-          <Link className="language-link" href={`/${other}`} lang={other}>{other === 'ar' ? 'العربية' : 'English'}</Link>
+          <LanguageSwitch className="language-link" locale={locale} />
           <Link className="button header-cta" href={`/${locale}/contact`}>{locale === 'ar' ? 'ابدأ مشروعك' : 'Start a project'}</Link>
           <details className="mobile-nav">
             <summary aria-label={locale === 'ar' ? 'فتح القائمة' : 'Open menu'}>☰</summary>
             <div className="mobile-nav__panel">
               {roots.map((item) => <Link key={item.id} href={navigationHref(item, locale)}>{localized(item.translations, locale)?.label}</Link>)}
               <Link href={`/${locale}/contact`}>{locale === 'ar' ? 'تواصل معنا' : 'Contact'}</Link>
-              <Link href={`/${other}`} lang={other}>{other === 'ar' ? 'العربية' : 'English'}</Link>
+              <LanguageSwitch locale={locale} />
             </div>
           </details>
         </div>
@@ -45,8 +47,8 @@ export function SiteHeader({ data }: { data: Awaited<ReturnType<typeof import('@
   );
 }
 
-export function SiteFooter({ data }: { data: Awaited<ReturnType<typeof import('@/lib/public-site').getSiteChrome>> }) {
-  const { settings, footer, locale } = data;
+export function SiteFooter({ data }: { data: Awaited<ReturnType<typeof getSiteChrome>> }) {
+  const { settings, footer, social, locale } = data;
   const brand = locale === 'ar' ? settings?.brandNameArabic || 'بوابة الحلول للفعاليات' : settings?.brandNameEnglish || 'Solutions Gate';
   return (
     <footer className="site-footer">
@@ -62,6 +64,9 @@ export function SiteFooter({ data }: { data: Awaited<ReturnType<typeof import('@
           {settings?.contactPhonePrimary ? <a href={`tel:${settings.contactPhonePrimary}`} dir="ltr">{settings.contactPhonePrimary}</a> : null}
           {settings?.contactPhoneSecondary ? <a href={`tel:${settings.contactPhoneSecondary}`} dir="ltr">{settings.contactPhoneSecondary}</a> : null}
           {settings?.contactEmail ? <a href={`mailto:${settings.contactEmail}`}>{settings.contactEmail}</a> : null}
+          {settings?.addressLine1 ? <span>{[settings.addressLine1, settings.addressLine2, settings.city, settings.region, settings.country, settings.postalCode].filter(Boolean).join(', ')}</span> : null}
+          {settings?.mapUrl ? <a href={settings.mapUrl} target="_blank" rel="noreferrer">{locale === 'ar' ? 'عرض الخريطة' : 'View map'}</a> : null}
+          {social.length ? <div className="footer-social">{social.map((item) => <a key={item.id} href={item.url} target="_blank" rel="noreferrer">{item.platform}</a>)}</div> : null}
         </div>
       </div>
       <div className="container-shell footer-bottom"><span>{locale === 'ar' ? settings?.copyrightArabic : settings?.copyrightEnglish}</span></div>
