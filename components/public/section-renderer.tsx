@@ -75,7 +75,7 @@ export function SectionRenderer({ section, locale, entities, contactFormEnabled 
       {section.primaryMedia ? <div className="hero-media"><PublicImage asset={section.primaryMedia} locale={locale} sizes="100vw" eager /></div> : null}
       <div className="container-shell hero-content">
         {copy?.subtitle ? <p className="eyebrow">{copy.subtitle}</p> : null}
-        <h1>{copy?.title}</h1>
+        {copy?.title?.trim() ? <h1>{copy.title}</h1> : null}
         {copy?.body ? <p className="hero-copy">{copy.body}</p> : null}
         <div className="cta-row">
           {primaryHref && primaryLabel ? <Link className="button" href={primaryHref}>{primaryLabel}</Link> : null}
