@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { db } from '@/lib/db';
 import { getPublicEntities, getPublicPage } from '@/lib/public-site';
 import { persistInquiry } from '@/lib/inquiries';
+import { assertSectionAllowed, parseSectionSettings } from '@/lib/section-schemas';
 
 describe('Phase 2 source-supported public content gates', () => {
   it('publishes the approved bilingual page set and source-backed services', async () => {
@@ -18,6 +19,14 @@ describe('Phase 2 source-supported public content gates', () => {
     expect(entities.services).toHaveLength(9);
     expect(entities.services.every((service) => service.translations.some((row) => row.locale === 'en') && service.translations.some((row) => row.locale === 'ar'))).toBe(true);
     expect(new Set(entities.processSteps.map((step) => step.number))).toEqual(new Set(['01','02','03','04','05']));
+  });
+
+  it('keeps all seeded sections inside their approved typed contracts', async () => {
+    const rows = await db.pageSection.findMany({ include: { page: true } });
+    for (const section of rows) {
+      expect(() => assertSectionAllowed(section.page.template as Parameters<typeof assertSectionAllowed>[0], section.sectionType)).not.toThrow();
+      expect(() => parseSectionSettings(section.sectionType, section.settingsVersion, section.settingsJson)).not.toThrow();
+    }
   });
 
   it('keeps unconfirmed metrics, clients and unresolved capability labels off the public surface', async () => {
