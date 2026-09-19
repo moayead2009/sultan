@@ -38,3 +38,14 @@
 - Added authenticated draft previews for Pages, Services and Projects.
 - Implemented persisted contact inquiries with client/server validation, sanitization, honeypot, rate limiting, optional Turnstile, optional Resend notification after persistence, inquiry status management and configurable factual form notices.
 - Added source-gate and inquiry-persistence regression tests for Phase 2.
+
+
+## 2026-09-19 — Phase 2 completion fixes: preview and source assets
+
+- Fixed the authenticated preview route to bind the validated locale from resolved route parameters; EN and AR previews now use the same validated route-locale path.
+- Extracted the actual Solutions Gate logo and approved source imagery from the supplied company-profile PDFs rather than using full-page screenshots.
+- Added optimized source derivatives for event imagery, promotional gifts, uniforms, signage, print/digital media, immersive technology, theater examples and the executive portrait.
+- Registered every imported source image as a bilingual `MediaAsset` with source-page provenance and wired it through Site Settings, Page Sections, Services, Service galleries, Leadership and `MediaUsage`.
+- Removed the public footer's temporary SG mark when the CMS source logo is available, and added source covers to public service cards.
+- Added `docs/source-assets.md` as the extraction/provenance/publication-gate register.
+- Kept profile project collages and the strategic-client logo grid out of public CMS seed data because their identities/details remain subject to the approved V2 confirmation gates.
