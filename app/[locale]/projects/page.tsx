@@ -11,8 +11,15 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return buildPageMetadata('projects', locale);
 }
 
-export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
+export default async function Page({
+  params,
+  searchParams
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ category?: string }>;
+}) {
   const { locale } = await params;
+  const query = await searchParams;
   if (!isLocale(locale)) notFound();
   const [page, entities, chrome] = await Promise.all([
     getPublicPage('projects', locale),
@@ -20,5 +27,17 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
     getSiteChrome(locale)
   ]);
   if (!page) notFound();
-  return <PublicPage locale={locale} page={page} entities={entities} chrome={chrome} breadcrumbs={[{ label: page.translation?.title || 'projects' }]} />;
+
+  const category = query.category?.trim();
+  const filteredEntities = category
+    ? { ...entities, projects: entities.projects.filter((project) => project.category?.slug === category) }
+    : entities;
+
+  return <PublicPage
+    locale={locale}
+    page={page}
+    entities={filteredEntities}
+    chrome={chrome}
+    breadcrumbs={[{ label: page.translation?.title || 'projects' }]}
+  />;
 }
