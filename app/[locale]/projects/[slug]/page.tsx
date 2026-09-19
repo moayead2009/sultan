@@ -6,7 +6,8 @@ import { PublicImage } from '@/components/public/media';
 import { buildProjectMetadata } from '@/lib/seo';
 import { getProject, getSiteChrome } from '@/lib/public-site';
 import { isLocale } from '@/lib/i18n';
-import { JsonLd, breadcrumbStructuredData, siteStructuredData } from '@/components/public/json-ld';
+import { JsonLd } from '@/components/public/json-ld';
+import { breadcrumbStructuredData, siteStructuredData } from '@/lib/structured-data';
 import { env } from '@/lib/env';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
