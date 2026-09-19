@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-const empty = z.object({}).strict();
 const alignment = z.enum(['start', 'center', 'end']);
 const mediaPosition = z.enum(['start', 'end', 'background']);
 
