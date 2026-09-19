@@ -51,7 +51,7 @@ jobs:
         run: npm run lint
       - name: Typecheck
         run: npm run typecheck
-      - name: Phase 1 tests
+      - name: Test suite
         run: npm test
       - name: Production build
         run: npm run build
