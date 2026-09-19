@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { buildPageMetadata } from '@/lib/seo';
-import { isLocale, targetLocale } from '@/lib/i18n';
+import { getPublicEntities, getPublicPage, getSiteChrome } from '@/lib/public-site';
+import { isLocale } from '@/lib/i18n';
+import { PublicPage } from '@/components/public/public-page';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -10,23 +11,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return buildPageMetadata('home', locale);
 }
 
-export default async function LocaleFoundationPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  return (
-    <main className="public-placeholder">
-      <section className="public-placeholder__card">
-        <div className="badge">{locale === 'ar' ? 'بوابة الحلول' : 'Solutions Gate'}</div>
-        <h1>{locale === 'ar' ? 'الموقع قيد التجهيز' : 'Website foundation ready'}</h1>
-        <p>
-          {locale === 'ar'
-            ? 'تم تجهيز البنية ثنائية اللغة ونظام إدارة المحتوى. المحتوى العام سيُنشر فقط بعد اجتياز بوابات النشر المعتمدة.'
-            : 'The bilingual foundation and CMS are ready. Public content is exposed only after the approved publication gates pass.'}
-        </p>
-        <Link className="button" href={'/' + targetLocale(locale)}>
-          {locale === 'ar' ? 'English' : 'العربية'}
-        </Link>
-      </section>
-    </main>
-  );
+  const [page, entities, chrome] = await Promise.all([getPublicPage('home', locale), getPublicEntities(locale), getSiteChrome(locale)]);
+  if (!page) notFound();
+  return <PublicPage locale={locale} page={page} entities={entities} chrome={chrome} />;
 }
