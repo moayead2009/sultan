@@ -14,6 +14,9 @@ const securityHeaders = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  experimental: {
+    serverComponentsExternalPackages: ['@node-rs/argon2']
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [{ protocol: 'https', hostname: '**' }]
