@@ -25,3 +25,22 @@ Reason: This directly implements the V2 storage abstraction and keeps production
 Decision: Observed purple/gold/turquoise cues are represented as semantic CSS variables and remain replaceable. They are not recorded as owner-confirmed official color codes.
 
 Reason: V2 permits implementation to continue while exact official color codes remain an owner-confirmation item.
+
+
+## D-005 — Revocable CMS sessions
+
+Decision: NextAuth remains the maintained authentication/session library, while each JWT-backed login is bound to a server-side AuthSession record that can be revoked.
+
+Reason: This preserves the approved maintained-library authentication architecture while allowing account disablement, password changes/resets and logout to invalidate existing sessions immediately on the server.
+
+## D-006 — Supported Next.js release line
+
+Decision: The Phase 1 App Router foundation targets Next.js 16.x Active LTS rather than the unsupported 14.x line.
+
+Reason: The V2 architecture requires Next.js App Router, not a specific obsolete major. Moving to Active LTS preserves the approved architecture while restoring supported security and maintenance status.
+
+## D-007 — Database-backed redirects at the request boundary
+
+Decision: Enabled Redirect CMS records are resolved by the Next.js request proxy before public route handling; admin, preview and API routes are excluded.
+
+Reason: Redirect records must be operational rather than passive CMS data, while protected and preview surfaces must not be unexpectedly redirected by public content configuration.
