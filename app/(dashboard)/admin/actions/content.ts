@@ -8,6 +8,7 @@ import { auditAdmin } from '@/lib/admin-audit';
 import { checkbox, integer, optionalText } from '@/lib/admin-input';
 import { replaceMediaUsage } from '@/lib/media-usage';
 import { validatePublishable } from '@/lib/publication';
+import { isSafeHttpUrl } from '@/lib/security-url';
 
 const id = z.string().trim().min(1);
 const slug = z.string().trim().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
@@ -25,9 +26,11 @@ export async function saveClient(formData: FormData) {
     name: requiredText(formData, locale + 'Name'),
     altText: requiredText(formData, locale + 'Alt')
   }));
+  const externalUrl = optionalText(formData.get('externalUrl'));
+  if (externalUrl && !isSafeHttpUrl(externalUrl)) throw new Error('Client external URL must be HTTP(S).');
   const data = {
     logoId,
-    externalUrl: optionalText(formData.get('externalUrl')),
+    externalUrl,
     sortOrder: integer(formData.get('sortOrder')),
     featured: checkbox(formData.get('featured')),
     enabled: checkbox(formData.get('enabled')),
