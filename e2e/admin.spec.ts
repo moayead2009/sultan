@@ -77,7 +77,9 @@ test('owner can edit bilingual page content, order sections, preview, publish an
   const section = page.locator('article.admin-card').filter({ hasText: 'phase3-body' });
   await section.locator('input[name="sortOrder"]').fill('27');
   await section.getByRole('button', { name: 'Save section' }).click();
-  expect((await db.pageSection.findUniqueOrThrow({ where: { id: fixture.section.id } })).sortOrder).toBe(27);
+  await expect.poll(async () =>
+    (await db.pageSection.findUniqueOrThrow({ where: { id: fixture.section.id } })).sortOrder
+  ).toBe(27);
 
   const currentSection = page.locator('article.admin-card').filter({ hasText: 'phase3-body' });
   await currentSection.getByRole('button', { name: 'Disable' }).click();
@@ -165,17 +167,20 @@ test('SEO editing and inquiry status management work through admin UI', async ({
   const seoForm = page.locator('form.admin-card').filter({ hasText: 'Page: phase3-e2e-page' }).filter({ hasText: 'EN' });
   await seoForm.getByLabel('Title').fill('Phase 3 SEO Updated');
   await seoForm.getByRole('button', { name: 'Save SEO' }).click();
-  const seo = await db.seoMetadata.findUniqueOrThrow({
-    where: { ownerType_ownerId_locale: { ownerType: 'Page', ownerId: fixture.page.id, locale: 'en' } }
-  });
-  expect(seo.title).toBe('Phase 3 SEO Updated');
+  await expect.poll(async () =>
+    (await db.seoMetadata.findUniqueOrThrow({
+      where: { ownerType_ownerId_locale: { ownerType: 'Page', ownerId: fixture.page.id, locale: 'en' } }
+    })).title
+  ).toBe('Phase 3 SEO Updated');
 
   await page.goto('/admin/inquiries?q=phase3-admin-inquiry');
   const card = page.locator('article.admin-card').filter({ hasText: 'phase3-admin-inquiry@example.invalid' });
   await expect(card).toBeVisible();
   await card.locator('select[name="status"]').selectOption('IN_PROGRESS');
   await card.getByRole('button', { name: 'Update status' }).click();
-  expect((await db.contactSubmission.findUniqueOrThrow({ where: { id: inquiry.id } })).status).toBe('IN_PROGRESS');
+  await expect.poll(async () =>
+    (await db.contactSubmission.findUniqueOrThrow({ where: { id: inquiry.id } })).status
+  ).toBe('IN_PROGRESS');
   await db.contactSubmission.delete({ where: { id: inquiry.id } });
 });
 
