@@ -6,7 +6,7 @@ export function localized<T extends { locale: string }>(rows: T[], locale: Local
 }
 
 export async function getSiteChrome(locale: Locale) {
-  const [settings, main, footer] = await Promise.all([
+  const [settings, main, footer, social] = await Promise.all([
     db.siteSettings.findUnique({ where: { id: 'site' }, include: { primaryLogo: true, alternateLogo: true } }),
     db.navigationMenu.findUnique({
       where: { key: 'main' },
@@ -21,9 +21,10 @@ export async function getSiteChrome(locale: Locale) {
     db.navigationMenu.findUnique({
       where: { key: 'footer' },
       include: { items: { where: { enabled: true }, orderBy: { sortOrder: 'asc' }, include: { translations: true, internalPage: true } } }
-    })
+    }),
+    db.socialLink.findMany({ where: { enabled: true }, orderBy: { sortOrder: 'asc' } })
   ]);
-  return { settings, main, footer, locale };
+  return { settings, main, footer, social, locale };
 }
 
 export function navigationHref(
@@ -58,7 +59,7 @@ export async function getPublicPage(slug: string, locale: Locale, includeDraft =
 }
 
 export async function getPublicEntities(locale: Locale) {
-  const [services, projects, clients, metrics, processSteps, leadership, capabilityPackages, capabilityFeatures, contacts] =
+  const [services, projects, projectCategories, clients, metrics, processSteps, leadership, capabilityPackages, capabilityFeatures, contacts] =
     await Promise.all([
       db.service.findMany({
         where: { status: 'PUBLISHED', category: { enabled: true } },
@@ -82,6 +83,11 @@ export async function getPublicEntities(locale: Locale) {
           media: { orderBy: { sortOrder: 'asc' }, include: { media: { include: { translations: true } } } },
           services: { include: { service: { include: { translations: true } } } }
         }
+      }),
+      db.projectCategory.findMany({
+        where: { enabled: true },
+        orderBy: { sortOrder: 'asc' },
+        include: { translations: true }
       }),
       db.client.findMany({
         where: { enabled: true, identityConfirmed: true, publicDisplayApproved: true },
@@ -135,6 +141,7 @@ export async function getPublicEntities(locale: Locale) {
       localizedFeatures: item.features.map((feature) => ({ ...feature, translation: localized(feature.translations, locale) }))
     })),
     projects: projects.map((item) => ({ ...item, translation: localized(item.translations, locale) })),
+    projectCategories: projectCategories.map((item) => ({ ...item, translation: localized(item.translations, locale) })),
     clients: clients.map((item) => ({ ...item, translation: localized(item.translations, locale) })),
     metrics: metrics.map((item) => ({ ...item, translation: localized(item.translations, locale) })),
     processSteps: processSteps.map((item) => ({ ...item, translation: localized(item.translations, locale) })),
