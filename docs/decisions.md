@@ -44,3 +44,22 @@ Reason: The V2 architecture requires Next.js App Router, not a specific obsolete
 Decision: Enabled Redirect CMS records are resolved by the Next.js request proxy before public route handling; admin, preview and API routes are excluded.
 
 Reason: Redirect records must be operational rather than passive CMS data, while protected and preview surfaces must not be unexpectedly redirected by public content configuration.
+
+
+## D-008 — Canonical service hierarchy and galleries
+
+Decision: Service parent/child hierarchy, service gallery media and related-service links are represented as Prisma relations rather than embedded JSON or loose IDs.
+
+Reason: Phase 2 requires sub-services, galleries and related services to remain maintainable and referentially safe in the CMS.
+
+## D-009 — Source-confirmation publication gates
+
+Decision: Profile-sourced metrics, client logos/identities, unnamed projects and the unresolved English premium package label are stored only in states that cannot render publicly until their specific confirmation gates are satisfied.
+
+Reason: The V2 package treats these as owner-confirmation items and explicitly prohibits turning profile ambiguity into public facts.
+
+## D-010 — Inquiry persistence before notification
+
+Decision: Contact inquiries are committed to PostgreSQL before any external email notification is attempted. Notification is optional and uses a configured Resend HTTP provider; failure changes notification state but never removes the stored inquiry.
+
+Reason: This preserves the approved persistence-first behavior while avoiding a dependency on provider credentials during development or review.
