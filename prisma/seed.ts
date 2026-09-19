@@ -244,10 +244,13 @@ async function wireSourceMedia(
     ['about', 'hero', 'eventHero'],
     ['about', 'who-we-are', 'eventHero'],
     ['services', 'hero', 'eventHero'],
+    ['services', 'intro', 'theaterStage'],
     ['services', 'technology', 'technology'],
     ['projects', 'hero', 'theaterStage'],
     ['capabilities', 'hero', 'theaterHall'],
+    ['capabilities', 'intro', 'theaterHall'],
     ['clients', 'hero', 'eventHero'],
+    ['clients', 'intro', 'signage'],
     ['contact', 'hero', 'eventHero']
   ];
   for (const [pageSlug, key, mediaKey] of sectionMedia) {
