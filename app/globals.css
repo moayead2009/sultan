@@ -136,7 +136,7 @@ html[dir='rtl'] .hero-media::after { background:linear-gradient(270deg,rgba(255,
 .process-section { background:linear-gradient(180deg,#fff,#f5fbfb); }
 .process-grid { list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:.8rem; }
 .process-grid li { position:relative; padding:1.3rem; border-block-start:3px solid var(--brand-teal); background:#fff; box-shadow:0 12px 34px rgba(36,19,49,.06); }
-.process-grid li span { font-size:2rem; color:var(--brand-gold); font-weight:900; }
+.process-grid li span { font-size:2rem; color:var(--brand-gold-text); font-weight:900; }
 .process-grid p { color:var(--brand-muted); line-height:1.7; }
 .project-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1.2rem; }
 .project-card { overflow:hidden; border-radius:1.25rem; background:#fff; border:1px solid var(--border); box-shadow:0 15px 45px rgba(36,19,49,.07); }
