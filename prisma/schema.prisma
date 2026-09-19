@@ -1,0 +1,676 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum Locale {
+  en
+  ar
+}
+
+enum InquiryStatus {
+  NEW
+  READ
+  IN_PROGRESS
+  CLOSED
+  SPAM
+}
+
+enum MediaKind {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
+
+enum CapabilityValueKind {
+  TEXT
+  BOOLEAN
+  NONE
+}
+
+model User {
+  id           String      @id @default(cuid())
+  name         String
+  email        String      @unique
+  passwordHash String
+  role         Role        @default(ADMIN)
+  status       UserStatus  @default(ACTIVE)
+  lastLoginAt  DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  uploadedMedia MediaAsset[]
+  auditLogs    AuditLog[]
+
+  @@index([status, email])
+}
+
+model SiteSettings {
+  id                    String   @id @default("site")
+  defaultLocale         Locale   @default(ar)
+  brandNameEnglish      String?
+  brandNameArabic       String?
+  websiteUrl            String?
+  primaryLogoId         String?
+  alternateLogoId       String?
+  faviconId             String?
+  defaultOgImageId      String?
+  contactPhonePrimary   String?
+  contactPhoneSecondary String?
+  contactEmail          String?
+  addressLine1          String?
+  addressLine2          String?
+  city                  String?
+  region                String?
+  country               String?
+  postalCode            String?
+  mapUrl                String?
+  latitude              Decimal? @db.Decimal(10, 7)
+  longitude             Decimal? @db.Decimal(10, 7)
+  copyrightEnglish      String?
+  copyrightArabic       String?
+  contactFormEnabled    Boolean  @default(false)
+  inquiryRecipient      String?
+  inquiryRetentionDays  Int?
+  inquiryFormNoticeEn   String?
+  inquiryFormNoticeAr   String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model SocialLink {
+  id        String   @id @default(cuid())
+  platform  String
+  url       String
+  sortOrder Int      @default(0)
+  enabled   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Page {
+  id              String                   @id @default(cuid())
+  slug            String                   @unique
+  template        String
+  status          PublishStatus            @default(DRAFT)
+  sortOrder       Int                      @default(0)
+  publishedAt     DateTime?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  translations    PageTranslation[]
+  sections        PageSection[]
+  navigationItems NavigationItem[]
+}
+
+model PageTranslation {
+  id              String   @id @default(cuid())
+  pageId          String
+  locale          Locale
+  title           String
+  navigationLabel String?
+  eyebrow         String?
+  summary         String?
+  content         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  page            Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, locale])
+  @@index([locale, pageId])
+}
+
+model PageSection {
+  id                    String                   @id @default(cuid())
+  pageId                String
+  key                   String
+  sectionType           String
+  sortOrder             Int                      @default(0)
+  enabled               Boolean                  @default(true)
+  primaryMediaId        String?
+  secondaryMediaId      String?
+  primaryCtaPageId      String?
+  primaryCtaUrl         String?
+  secondaryCtaPageId    String?
+  secondaryCtaUrl       String?
+  settingsVersion       Int                      @default(1)
+  settingsJson          Json                     @default("{}")
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+  page                  Page                     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  translations          PageSectionTranslation[]
+  media                 PageSectionMedia[]
+
+  @@unique([pageId, key])
+  @@index([pageId, sortOrder])
+}
+
+model PageSectionTranslation {
+  id                String      @id @default(cuid())
+  sectionId         String
+  locale            Locale
+  title             String?
+  subtitle          String?
+  body              String?
+  primaryCtaLabel   String?
+  secondaryCtaLabel String?
+  accessibleLabel   String?
+  section           PageSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  @@unique([sectionId, locale])
+}
+
+model PageSectionMedia {
+  sectionId String
+  mediaId   String
+  role      String
+  sortOrder Int          @default(0)
+  section   PageSection  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  media     MediaAsset   @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@id([sectionId, mediaId, role])
+  @@index([mediaId])
+}
+
+model NavigationMenu {
+  id      String           @id @default(cuid())
+  key     String           @unique
+  enabled Boolean          @default(true)
+  items   NavigationItem[]
+}
+
+model NavigationItem {
+  id             String                      @id @default(cuid())
+  menuId         String
+  parentId       String?
+  internalPageId String?
+  customUrl      String?
+  targetBlank    Boolean                     @default(false)
+  sortOrder      Int                         @default(0)
+  enabled        Boolean                     @default(true)
+  menu           NavigationMenu              @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parent         NavigationItem?             @relation("NavigationTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children       NavigationItem[]            @relation("NavigationTree")
+  internalPage   Page?                       @relation(fields: [internalPageId], references: [id], onDelete: SetNull)
+  translations   NavigationItemTranslation[]
+
+  @@index([menuId, sortOrder])
+}
+
+model NavigationItemTranslation {
+  id               String         @id @default(cuid())
+  navigationItemId String
+  locale           Locale
+  label            String
+  navigationItem   NavigationItem @relation(fields: [navigationItemId], references: [id], onDelete: Cascade)
+
+  @@unique([navigationItemId, locale])
+}
+
+model ServiceCategory {
+  id           String                       @id @default(cuid())
+  slug         String                       @unique
+  sortOrder    Int                          @default(0)
+  enabled      Boolean                      @default(true)
+  translations ServiceCategoryTranslation[]
+  services     Service[]
+}
+
+model ServiceCategoryTranslation {
+  id               String          @id @default(cuid())
+  categoryId       String
+  locale           Locale
+  name             String
+  shortDescription String?
+  detailedIntro    String?
+  category         ServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, locale])
+}
+
+model Service {
+  id            String               @id @default(cuid())
+  categoryId    String
+  slug          String               @unique
+  iconMediaId   String?
+  coverMediaId  String?
+  primaryCtaUrl String?
+  sortOrder     Int                  @default(0)
+  featured      Boolean              @default(false)
+  status        PublishStatus        @default(DRAFT)
+  publishedAt   DateTime?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  category      ServiceCategory      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  translations  ServiceTranslation[]
+  features      ServiceFeature[]
+  projects      ProjectService[]
+  submissions   ContactSubmission[]
+
+  @@index([status, featured, sortOrder])
+}
+
+model ServiceTranslation {
+  id               String  @id @default(cuid())
+  serviceId        String
+  locale           Locale
+  name             String
+  shortDescription String
+  detailedContent  String
+  ctaLabel         String?
+  service          Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceId, locale])
+}
+
+model ServiceFeature {
+  id           String                      @id @default(cuid())
+  serviceId    String
+  sortOrder    Int                         @default(0)
+  enabled      Boolean                     @default(true)
+  service      Service                     @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  translations ServiceFeatureTranslation[]
+
+  @@index([serviceId, sortOrder])
+}
+
+model ServiceFeatureTranslation {
+  id               String         @id @default(cuid())
+  serviceFeatureId String
+  locale           Locale
+  title            String
+  description      String?
+  feature          ServiceFeature @relation(fields: [serviceFeatureId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceFeatureId, locale])
+}
+
+model ProjectCategory {
+  id           String                       @id @default(cuid())
+  slug         String                       @unique
+  sortOrder    Int                          @default(0)
+  enabled      Boolean                      @default(true)
+  translations ProjectCategoryTranslation[]
+  projects     Project[]
+}
+
+model ProjectCategoryTranslation {
+  id         String          @id @default(cuid())
+  categoryId String
+  locale     Locale
+  name       String
+  category   ProjectCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, locale])
+}
+
+model Project {
+  id              String               @id @default(cuid())
+  slug            String               @unique
+  categoryId      String?
+  clientId        String?
+  location        String?
+  year            Int?
+  coverMediaId    String?
+  videoMediaId    String?
+  featured        Boolean              @default(false)
+  sortOrder       Int                  @default(0)
+  status          PublishStatus        @default(DRAFT)
+  publishedAt     DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  category        ProjectCategory?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  client          Client?              @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  translations    ProjectTranslation[]
+  media           ProjectMedia[]
+  services        ProjectService[]
+
+  @@index([status, featured, sortOrder])
+}
+
+model ProjectTranslation {
+  id                  String  @id @default(cuid())
+  projectId           String
+  locale              Locale
+  title               String
+  summary             String
+  detailedDescription String?
+  challenge           String?
+  solution            String?
+  results             String?
+  project             Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, locale])
+}
+
+model ProjectMedia {
+  id        String     @id @default(cuid())
+  projectId String
+  mediaId   String
+  role      String
+  sortOrder Int        @default(0)
+  project   Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  media     MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@unique([projectId, mediaId, role])
+  @@index([mediaId])
+}
+
+model ProjectService {
+  projectId String
+  serviceId String
+  sortOrder Int      @default(0)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+
+  @@id([projectId, serviceId])
+}
+
+model Client {
+  id                    String              @id @default(cuid())
+  logoId                String?
+  externalUrl           String?
+  sortOrder             Int                 @default(0)
+  featured              Boolean             @default(false)
+  enabled               Boolean             @default(false)
+  identityConfirmed     Boolean             @default(false)
+  publicDisplayApproved Boolean             @default(false)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  translations          ClientTranslation[]
+  projects              Project[]
+
+  @@index([enabled, featured, sortOrder])
+}
+
+model ClientTranslation {
+  id      String @id @default(cuid())
+  clientId String
+  locale  Locale
+  name    String
+  altText String
+  client  Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, locale])
+}
+
+model ProcessStep {
+  id           String                   @id @default(cuid())
+  key          String                   @unique
+  number       String
+  iconMediaId  String?
+  imageMediaId String?
+  link         String?
+  sortOrder    Int                      @default(0)
+  enabled      Boolean                  @default(true)
+  translations ProcessStepTranslation[]
+}
+
+model ProcessStepTranslation {
+  id            String      @id @default(cuid())
+  processStepId String
+  locale        Locale
+  title         String
+  description   String
+  processStep   ProcessStep @relation(fields: [processStepId], references: [id], onDelete: Cascade)
+
+  @@unique([processStepId, locale])
+}
+
+model Metric {
+  id              String              @id @default(cuid())
+  displayValue    String
+  suffix          String?
+  iconMediaId     String?
+  sortOrder       Int                 @default(0)
+  enabled         Boolean             @default(false)
+  sourceNote      String
+  lastConfirmedAt DateTime?
+  translations    MetricTranslation[]
+}
+
+model MetricTranslation {
+  id          String @id @default(cuid())
+  metricId    String
+  locale      Locale
+  label       String
+  description String?
+  metric      Metric @relation(fields: [metricId], references: [id], onDelete: Cascade)
+
+  @@unique([metricId, locale])
+}
+
+model CapabilityPackage {
+  id           String                         @id @default(cuid())
+  key          String                         @unique
+  sortOrder    Int                            @default(0)
+  enabled      Boolean                        @default(false)
+  needsOwnerLabel Boolean                     @default(false)
+  translations CapabilityPackageTranslation[]
+  values       CapabilityValue[]
+}
+
+model CapabilityPackageTranslation {
+  id                  String            @id @default(cuid())
+  capabilityPackageId String
+  locale              Locale
+  name                String
+  description         String?
+  capabilityPackage   CapabilityPackage @relation(fields: [capabilityPackageId], references: [id], onDelete: Cascade)
+
+  @@unique([capabilityPackageId, locale])
+}
+
+model CapabilityFeature {
+  id           String                         @id @default(cuid())
+  key          String                         @unique
+  sortOrder    Int                            @default(0)
+  enabled      Boolean                        @default(false)
+  translations CapabilityFeatureTranslation[]
+  values       CapabilityValue[]
+}
+
+model CapabilityFeatureTranslation {
+  id                  String            @id @default(cuid())
+  capabilityFeatureId String
+  locale              Locale
+  name                String
+  description         String?
+  capabilityFeature   CapabilityFeature @relation(fields: [capabilityFeatureId], references: [id], onDelete: Cascade)
+
+  @@unique([capabilityFeatureId, locale])
+}
+
+model CapabilityValue {
+  id                    String                     @id @default(cuid())
+  capabilityPackageId   String
+  capabilityFeatureId   String
+  valueKind             CapabilityValueKind        @default(TEXT)
+  booleanValue          Boolean?
+  enabled               Boolean                    @default(false)
+  capabilityPackage     CapabilityPackage          @relation(fields: [capabilityPackageId], references: [id], onDelete: Cascade)
+  capabilityFeature     CapabilityFeature          @relation(fields: [capabilityFeatureId], references: [id], onDelete: Cascade)
+  translations          CapabilityValueTranslation[]
+
+  @@unique([capabilityPackageId, capabilityFeatureId])
+}
+
+model CapabilityValueTranslation {
+  id                String          @id @default(cuid())
+  capabilityValueId String
+  locale            Locale
+  content           String?
+  capabilityValue   CapabilityValue @relation(fields: [capabilityValueId], references: [id], onDelete: Cascade)
+
+  @@unique([capabilityValueId, locale])
+}
+
+model LeadershipMember {
+  id           String                        @id @default(cuid())
+  imageId      String?
+  sortOrder    Int                           @default(0)
+  status       PublishStatus                 @default(DRAFT)
+  translations LeadershipMemberTranslation[]
+}
+
+model LeadershipMemberTranslation {
+  id                   String           @id @default(cuid())
+  leadershipMemberId   String
+  locale               Locale
+  name                 String
+  title                String
+  biographyOrMessage   String
+  leadershipMember     LeadershipMember @relation(fields: [leadershipMemberId], references: [id], onDelete: Cascade)
+
+  @@unique([leadershipMemberId, locale])
+}
+
+model ContactPerson {
+  id           String                     @id @default(cuid())
+  phone        String?
+  email        String?
+  organization String?
+  imageId      String?
+  sortOrder    Int                        @default(0)
+  enabled      Boolean                    @default(true)
+  translations ContactPersonTranslation[]
+}
+
+model ContactPersonTranslation {
+  id              String        @id @default(cuid())
+  contactPersonId String
+  locale          Locale
+  name            String
+  title           String?
+  contactPerson   ContactPerson @relation(fields: [contactPersonId], references: [id], onDelete: Cascade)
+
+  @@unique([contactPersonId, locale])
+}
+
+model MediaAsset {
+  id               String                  @id @default(cuid())
+  storageKey       String                  @unique
+  publicUrl        String
+  originalFilename String
+  mimeType         String
+  kind             MediaKind               @default(IMAGE)
+  byteSize         Int
+  width            Int?
+  height           Int?
+  checksum         String?
+  uploadedById     String?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  uploadedBy       User?                   @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  translations     MediaAssetTranslation[]
+  usages           MediaUsage[]
+  pageSections     PageSectionMedia[]
+  projectMedia     ProjectMedia[]
+
+  @@index([kind, createdAt])
+}
+
+model MediaAssetTranslation {
+  id           String     @id @default(cuid())
+  mediaAssetId String
+  locale       Locale
+  altText      String?
+  caption      String?
+  mediaAsset   MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+
+  @@unique([mediaAssetId, locale])
+}
+
+model MediaUsage {
+  id                   String     @id @default(cuid())
+  mediaAssetId         String
+  ownerType            String
+  ownerId              String
+  usageRole            String
+  isPublishedReference Boolean    @default(false)
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+  mediaAsset           MediaAsset @relation(fields: [mediaAssetId], references: [id], onDelete: Cascade)
+
+  @@index([mediaAssetId, isPublishedReference])
+  @@unique([mediaAssetId, ownerType, ownerId, usageRole])
+}
+
+model SeoMetadata {
+  id                String   @id @default(cuid())
+  ownerType         String
+  ownerId           String
+  locale            Locale
+  title             String
+  description       String
+  canonicalOverride String?
+  robots            String   @default("index,follow")
+  ogTitle           String?
+  ogDescription     String?
+  ogImageId         String?
+  updatedAt         DateTime @updatedAt
+
+  @@unique([ownerType, ownerId, locale])
+}
+
+model ContactSubmission {
+  id                 String        @id @default(cuid())
+  name               String
+  organization       String?
+  email              String
+  phone              String?
+  serviceId          String?
+  subject            String?
+  message            String
+  locale             Locale
+  status             InquiryStatus @default(NEW)
+  consentJson        Json?
+  notificationStatus String        @default("NOT_ATTEMPTED")
+  retentionUntil     DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  service            Service?      @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+}
+
+model Redirect {
+  id        String   @id @default(cuid())
+  fromPath  String   @unique
+  toPath    String
+  permanent Boolean  @default(true)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  action      String
+  entityType  String
+  entityId    String?
+  metadataJson Json?
+  createdAt   DateTime @default(now())
+  actor       User?    @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([actorUserId, createdAt])
+}
