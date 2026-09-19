@@ -25,7 +25,7 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
 import { createNavigationItem, updateNavigationItem } from '@/app/(dashboard)/admin/actions/navigation';
 import { createSection, updateSection } from '@/app/(dashboard)/admin/actions/sections';
-import { setUserRole } from '@/app/(dashboard)/admin/actions/users';
+import { deleteUser, setUserRole, setUserStatus } from '@/app/(dashboard)/admin/actions/users';
 
 const suffix = randomUUID().slice(0, 8);
 const ids: { user?: string; secondOwner?: string; page?: string; menu?: string; media?: string; section?: string; nav?: string } = {};
@@ -119,6 +119,41 @@ describe('core Phase 1 CMS mutations', () => {
     promoteAgain.set('role', 'OWNER');
     await setUserRole(promoteAgain);
     expect((await db.user.findUniqueOrThrow({ where: { id: ids.user } })).role).toBe('OWNER');
+
+    await db.user.delete({ where: { id: second.id } });
+    ids.secondOwner = undefined;
+  });
+
+  it('prevents disabling or deleting the last active OWNER', async () => {
+    auth.requireAdmin.mockImplementation(async () => ({
+      user: {
+        id: 'acting-owner',
+        name: 'Acting Owner',
+        email: 'acting-owner@example.invalid',
+        role: 'OWNER',
+        status: 'ACTIVE'
+      }
+    }));
+
+    const disable = new FormData();
+    disable.set('id', ids.user!);
+    disable.set('status', 'DISABLED');
+    await expect(setUserStatus(disable)).rejects.toThrow(/last active OWNER/i);
+
+    const remove = new FormData();
+    remove.set('id', ids.user!);
+    await expect(deleteUser(remove)).rejects.toThrow(/last active OWNER/i);
+
+    const user = await db.user.findUniqueOrThrow({ where: { id: ids.user } });
+    auth.requireAdmin.mockImplementation(async () => ({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: 'OWNER',
+        status: 'ACTIVE'
+      }
+    }));
   });
 
   it('materializes all Phase 1 schema indexes through migrations', async () => {
