@@ -33,7 +33,8 @@ for (const locale of ['en', 'ar'] as const) {
       await expect(page.locator('main')).toBeVisible();
       await expect(page.locator('html')).toHaveAttribute('lang', locale);
       await expect(page.locator('html')).toHaveAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr');
-      await expect(page.locator('h1').first()).toBeVisible();
+      await expect(page.locator('main h1')).toHaveCount(1);
+      await expect(page.locator('main h1')).toBeVisible();
     }
   });
 
