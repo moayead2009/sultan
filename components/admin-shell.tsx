@@ -3,13 +3,30 @@ import Link from 'next/link';
 const items = [
   ['Overview', '/admin'],
   ['My account', '/admin/account'],
-  ['Site settings', '/admin/site-settings'],
+  ['Homepage', '/admin/homepage'],
+  ['About', '/admin/about'],
   ['Pages', '/admin/pages'],
   ['Sections', '/admin/sections'],
-  ['Navigation', '/admin/navigation'],
-  ['Media', '/admin/media'],
+  ['Services', '/admin/services'],
+  ['Service categories', '/admin/service-categories'],
+  ['Projects', '/admin/projects'],
+  ['Galleries', '/admin/galleries'],
+  ['Clients', '/admin/clients'],
+  ['Capabilities', '/admin/capabilities'],
+  ['Metrics', '/admin/metrics'],
+  ['Work cycle', '/admin/work-cycle'],
+  ['Leadership', '/admin/leadership'],
   ['Contact people', '/admin/contact-people'],
+  ['Contact settings', '/admin/contact-settings'],
+  ['Inquiries', '/admin/inquiries'],
+  ['Navigation', '/admin/navigation'],
+  ['Footer', '/admin/footer'],
+  ['Branding', '/admin/branding'],
+  ['Media', '/admin/media'],
+  ['Buttons & CTAs', '/admin/buttons'],
+  ['SEO', '/admin/seo'],
   ['Redirects', '/admin/redirects'],
+  ['Global settings', '/admin/global-settings'],
   ['Users', '/admin/users']
 ] as const;
 
@@ -30,11 +47,7 @@ export function AdminShell({
         <nav aria-label="CMS">
           {items
             .filter(([label]) => label !== 'Users' || isOwner)
-            .map(([label, href]) => (
-              <Link key={href} href={href}>
-                {label}
-              </Link>
-            ))}
+            .map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
           <Link href="/api/auth/signout">Sign out</Link>
         </nav>
       </aside>
