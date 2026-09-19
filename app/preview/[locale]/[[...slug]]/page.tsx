@@ -16,7 +16,7 @@ export default async function PreviewPage({
 }) {
   await requireAdmin();
   const resolved = await params;
-  const locale = locale;
+  const { locale } = resolved;
   if (!isLocale(locale)) notFound();
   const parts = resolved.slug ?? [];
 
