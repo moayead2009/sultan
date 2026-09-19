@@ -148,7 +148,8 @@ test('owner can upload sanitized media and sees destructive confirmation', async
   expect(asset.byteSize).toBeGreaterThan(0);
 
   page.once('dialog', async (dialog) => {
-    expect(dialog.message()).toContain('delete');
+    expect(dialog.message()).toMatch(/delete/i);
+    expect(dialog.message()).toMatch(/cannot be undone/i);
     await dialog.dismiss();
   });
   await page.locator('tr').filter({ hasText: 'phase3-e2e.webp' }).getByRole('button').click();
