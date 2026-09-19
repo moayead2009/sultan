@@ -112,6 +112,7 @@ export default async function BusinessResourcePage({
       {rows.length===0?<Empty>No services match this search.</Empty>:rows.map((row)=>{
         const en=copy(row.translations,'en'),ar=copy(row.translations,'ar');
         return <details className="admin-card" key={row.id}><summary><strong>{en?.name}</strong> · <span className="badge">{row.status}</span>{row.featured?' · Featured':''}</summary>
+          <p className="cta-row"><Link className="text-link" href={'/preview/en/services/' + row.slug}>EN preview</Link><Link className="text-link" href={'/preview/ar/services/' + row.slug}>AR preview</Link></p>
           <form action={saveService} className="form-grid" style={{marginTop:'1rem'}}>
             <input type="hidden" name="id" value={row.id}/>
             <div className="split"><label>Slug<input name="slug" defaultValue={row.slug} required /></label><label>Category<select name="categoryId" defaultValue={row.categoryId}>{categories.map((c)=><option key={c.id} value={c.id}>{copy(c.translations,'en')?.name}</option>)}</select></label></div>
@@ -153,6 +154,7 @@ export default async function BusinessResourcePage({
       {rows.length===0?<Empty>No verified project records have been created yet.</Empty>:rows.map((row)=>{
         const en=copy(row.translations,'en'),ar=copy(row.translations,'ar');
         return <details className="admin-card" key={row.id}><summary><strong>{en?.title}</strong> · <span className="badge">{row.status}</span></summary>
+          <p className="cta-row"><Link className="text-link" href={'/preview/en/projects/' + row.slug}>EN preview</Link><Link className="text-link" href={'/preview/ar/projects/' + row.slug}>AR preview</Link></p>
           <form action={saveProject} className="form-grid" style={{marginTop:'1rem'}}><input type="hidden" name="id" value={row.id}/>
             <div className="split"><label>Slug<input name="slug" defaultValue={row.slug} required/></label><label>Category<select name="categoryId" defaultValue={row.categoryId ?? ''}><option value="">None</option>{categories.map((c)=><option key={c.id} value={c.id}>{copy(c.translations,'en')?.name}</option>)}</select></label></div>
             <div className="split"><label>Client<select name="clientId" defaultValue={row.clientId ?? ''}><option value="">None</option>{clients.map((c)=><option key={c.id} value={c.id}>{copy(c.translations,'en')?.name}</option>)}</select></label><label>Year<input name="year" type="number" defaultValue={row.year ?? ''}/></label></div>
