@@ -1,6 +1,306 @@
 import { Prisma } from '@prisma/client';
 import { db } from '../lib/db';
 
+type SourceMediaKey =
+  | 'logo'
+  | 'eventHero'
+  | 'promotionalGifts'
+  | 'uniforms'
+  | 'signage'
+  | 'printDigital'
+  | 'technology'
+  | 'theaterHall'
+  | 'theaterStage'
+  | 'leadership';
+
+const sourceMedia: Record<SourceMediaKey, {
+  storageKey: string;
+  publicUrl: string;
+  originalFilename: string;
+  mimeType: string;
+  byteSize: number;
+  width: number;
+  height: number;
+  checksum: string;
+  sourcePage: number;
+  enAlt: string;
+  arAlt: string;
+}> = {
+  logo: {
+    storageKey: 'source-profile/logo-mark.webp',
+    publicUrl: '/uploads/source-profile/logo-mark.webp',
+    originalFilename: 'solutions-gate-logo-mark.webp',
+    mimeType: 'image/webp',
+    byteSize: 13574,
+    width: 315,
+    height: 260,
+    checksum: '3759b38dd1fb47b6c278a3466a0179122b481304e688292fa3ea476c76675564',
+    sourcePage: 1,
+    enAlt: 'Solutions Gate logo mark',
+    arAlt: 'شعار بوابة الحلول'
+  },
+  eventHero: {
+    storageKey: 'source-profile/event-hero.avif',
+    publicUrl: '/uploads/source-profile/event-hero.avif',
+    originalFilename: 'solutions-gate-event-hero.avif',
+    mimeType: 'image/avif',
+    byteSize: 5970,
+    width: 500,
+    height: 396,
+    checksum: '740213d76746ba622b6b0abed5d3de33b2d22a1eac3f5c0a43c0541ac03bbfab',
+    sourcePage: 2,
+    enAlt: 'Formal event venue with illuminated chandeliers and stage lighting',
+    arAlt: 'قاعة فعالية رسمية بإضاءة وثريات ومسرح'
+  },
+  promotionalGifts: {
+    storageKey: 'source-profile/promotional-gifts.avif',
+    publicUrl: '/uploads/source-profile/promotional-gifts.avif',
+    originalFilename: 'solutions-gate-promotional-gifts.avif',
+    mimeType: 'image/avif',
+    byteSize: 4345,
+    width: 420,
+    height: 339,
+    checksum: '7610bdcd06261c206dffa35ec3c891bf9fce447a0438873b309193885e3d3aa3',
+    sourcePage: 6,
+    enAlt: 'Solutions Gate branded promotional gift set',
+    arAlt: 'مجموعة هدايا ترويجية تحمل علامة بوابة الحلول'
+  },
+  uniforms: {
+    storageKey: 'source-profile/uniforms.avif',
+    publicUrl: '/uploads/source-profile/uniforms.avif',
+    originalFilename: 'solutions-gate-event-uniforms.avif',
+    mimeType: 'image/avif',
+    byteSize: 4324,
+    width: 420,
+    height: 342,
+    checksum: '91017d327e26f8551871736d6d78090b991c327a0c8729e77a5195aa1ba10928',
+    sourcePage: 7,
+    enAlt: 'Four Solutions Gate event uniform examples',
+    arAlt: 'أربعة نماذج لزي فرق الفعاليات من بوابة الحلول'
+  },
+  signage: {
+    storageKey: 'source-profile/signage-wayfinding.avif',
+    publicUrl: '/uploads/source-profile/signage-wayfinding.avif',
+    originalFilename: 'solutions-gate-signage-wayfinding.avif',
+    mimeType: 'image/avif',
+    byteSize: 5198,
+    width: 420,
+    height: 332,
+    checksum: '1b5c5d682320c936ca70e0f0acdf624896d39e7122d7423c327d03ded822d1f3',
+    sourcePage: 8,
+    enAlt: 'Illuminated Solutions Gate facade and wayfinding sign',
+    arAlt: 'واجهة ولوحة إرشادية مضاءة لبوابة الحلول'
+  },
+  printDigital: {
+    storageKey: 'source-profile/print-digital.avif',
+    publicUrl: '/uploads/source-profile/print-digital.avif',
+    originalFilename: 'solutions-gate-print-digital.avif',
+    mimeType: 'image/avif',
+    byteSize: 5495,
+    width: 420,
+    height: 336,
+    checksum: 'ab4f4b8e509a0c46285f19e1ea274bda2df150ca11635afe5eef9310eb2e2684',
+    sourcePage: 9,
+    enAlt: 'Solutions Gate branded print and digital media materials',
+    arAlt: 'مواد مطبوعة ورقمية تحمل علامة بوابة الحلول'
+  },
+  technology: {
+    storageKey: 'source-profile/technology-immersive.avif',
+    publicUrl: '/uploads/source-profile/technology-immersive.avif',
+    originalFilename: 'solutions-gate-immersive-technology.avif',
+    mimeType: 'image/avif',
+    byteSize: 5462,
+    width: 386,
+    height: 420,
+    checksum: '13d735c36417ff708175e8257588bb1d47a8d769cf47611a904afb938e03416c',
+    sourcePage: 11,
+    enAlt: 'Immersive event space with large digital displays and chandelier lighting',
+    arAlt: 'مساحة فعالية غامرة بشاشات رقمية كبيرة وإضاءة بالثريات'
+  },
+  theaterHall: {
+    storageKey: 'source-profile/theater-hall.avif',
+    publicUrl: '/uploads/source-profile/theater-hall.avif',
+    originalFilename: 'solutions-gate-conference-theater.avif',
+    mimeType: 'image/avif',
+    byteSize: 4941,
+    width: 420,
+    height: 273,
+    checksum: 'e2ec9c2dd307d8e898ce26974f56eef07330295fa1880d5f21e3ebdfd2c7cb4c',
+    sourcePage: 13,
+    enAlt: 'Large conference theater interior',
+    arAlt: 'قاعة مسرح مؤتمرات كبيرة'
+  },
+  theaterStage: {
+    storageKey: 'source-profile/theater-stage.avif',
+    publicUrl: '/uploads/source-profile/theater-stage.avif',
+    originalFilename: 'solutions-gate-event-stage.avif',
+    mimeType: 'image/avif',
+    byteSize: 5066,
+    width: 420,
+    height: 266,
+    checksum: '60cea52dc3234b521a00c746db12d36ebcca6e62f9b966d67d820f53d9f43a97',
+    sourcePage: 13,
+    enAlt: 'Decorated event stage with lighting and floral installation',
+    arAlt: 'مسرح فعالية مزين بإضاءة وتنسيق نباتي'
+  },
+  leadership: {
+    storageKey: 'source-profile/leadership-sultan.avif',
+    publicUrl: '/uploads/source-profile/leadership-sultan.avif',
+    originalFilename: 'sultan-hijazi-leadership.avif',
+    mimeType: 'image/avif',
+    byteSize: 5390,
+    width: 420,
+    height: 420,
+    checksum: 'fef6b483397d4775b2c15c013092c7910254c87640d630f4be95eb23f381a0a9',
+    sourcePage: 18,
+    enAlt: 'Sultan Hijazi',
+    arAlt: 'سلطان حجازي'
+  }
+};
+
+async function seedSourceMedia() {
+  const result = {} as Record<SourceMediaKey, { id: string }>;
+  for (const [key, asset] of Object.entries(sourceMedia) as Array<[SourceMediaKey, (typeof sourceMedia)[SourceMediaKey]]>) {
+    const row = await db.mediaAsset.upsert({
+      where: { storageKey: asset.storageKey },
+      update: {
+        publicUrl: asset.publicUrl,
+        originalFilename: asset.originalFilename,
+        mimeType: asset.mimeType,
+        kind: 'IMAGE',
+        byteSize: asset.byteSize,
+        width: asset.width,
+        height: asset.height,
+        checksum: asset.checksum
+      },
+      create: {
+        storageKey: asset.storageKey,
+        publicUrl: asset.publicUrl,
+        originalFilename: asset.originalFilename,
+        mimeType: asset.mimeType,
+        kind: 'IMAGE',
+        byteSize: asset.byteSize,
+        width: asset.width,
+        height: asset.height,
+        checksum: asset.checksum
+      }
+    });
+    result[key] = { id: row.id };
+
+    const enCaption = `Source: Solutions Gate Company Profile 2026, English profile p.${asset.sourcePage}; extracted from the embedded source image and optimized for web use.`;
+    const arCaption = `المصدر: ملف شركة بوابة الحلول 2026، النسخة الإنجليزية ص.${asset.sourcePage}؛ مستخرج من الصورة الأصلية المضمنة ومهيأ للاستخدام على الويب.`;
+    await db.mediaAssetTranslation.upsert({
+      where: { mediaAssetId_locale: { mediaAssetId: row.id, locale: 'en' } },
+      update: { altText: asset.enAlt, caption: enCaption },
+      create: { mediaAssetId: row.id, locale: 'en', altText: asset.enAlt, caption: enCaption }
+    });
+    await db.mediaAssetTranslation.upsert({
+      where: { mediaAssetId_locale: { mediaAssetId: row.id, locale: 'ar' } },
+      update: { altText: asset.arAlt, caption: arCaption },
+      create: { mediaAssetId: row.id, locale: 'ar', altText: asset.arAlt, caption: arCaption }
+    });
+  }
+  return result;
+}
+
+async function replaceSeedUsages(
+  ownerType: string,
+  ownerId: string,
+  usages: Array<{ mediaAssetId: string; usageRole: string }>
+) {
+  await db.mediaUsage.deleteMany({ where: { ownerType, ownerId } });
+  if (usages.length) {
+    await db.mediaUsage.createMany({
+      data: usages.map((usage) => ({ ...usage, ownerType, ownerId, isPublishedReference: true }))
+    });
+  }
+}
+
+async function wireSourceMedia(
+  media: Awaited<ReturnType<typeof seedSourceMedia>>,
+  pageMap: Map<string, string>
+) {
+  await db.siteSettings.update({
+    where: { id: 'site' },
+    data: {
+      primaryLogoId: media.logo.id,
+      alternateLogoId: media.logo.id,
+      faviconId: media.logo.id,
+      defaultOgImageId: media.eventHero.id
+    }
+  });
+  await replaceSeedUsages('SiteSettings', 'site', [
+    { mediaAssetId: media.logo.id, usageRole: 'primaryLogo' },
+    { mediaAssetId: media.logo.id, usageRole: 'alternateLogo' },
+    { mediaAssetId: media.logo.id, usageRole: 'favicon' },
+    { mediaAssetId: media.eventHero.id, usageRole: 'defaultOgImage' }
+  ]);
+
+  const sectionMedia: Array<[string, string, SourceMediaKey]> = [
+    ['home', 'hero', 'eventHero'],
+    ['home', 'who-we-are', 'eventHero'],
+    ['home', 'why-solutions-gate', 'printDigital'],
+    ['home', 'visual-future', 'technology'],
+    ['about', 'hero', 'eventHero'],
+    ['about', 'who-we-are', 'eventHero'],
+    ['services', 'hero', 'eventHero'],
+    ['services', 'technology', 'technology'],
+    ['projects', 'hero', 'theaterStage'],
+    ['capabilities', 'hero', 'theaterHall'],
+    ['clients', 'hero', 'eventHero'],
+    ['contact', 'hero', 'eventHero']
+  ];
+  for (const [pageSlug, key, mediaKey] of sectionMedia) {
+    const pageId = pageMap.get(pageSlug);
+    if (!pageId) continue;
+    const section = await db.pageSection.findUnique({ where: { pageId_key: { pageId, key } } });
+    if (!section) continue;
+    await db.pageSection.update({ where: { id: section.id }, data: { primaryMediaId: media[mediaKey].id } });
+    await replaceSeedUsages('PageSection', section.id, [{ mediaAssetId: media[mediaKey].id, usageRole: 'primary' }]);
+  }
+
+  const serviceMedia: Record<string, { cover: SourceMediaKey; gallery?: SourceMediaKey[] }> = {
+    'event-design-production': { cover: 'eventHero' },
+    'theater-engineering-construction': { cover: 'theaterStage', gallery: ['theaterStage', 'theaterHall', 'eventHero'] },
+    'event-conference-management': { cover: 'theaterHall' },
+    'interactive-technologies-innovation': { cover: 'technology' },
+    'ceremonies-grand-openings': { cover: 'theaterStage' },
+    'promotional-gifts': { cover: 'promotionalGifts' },
+    uniforms: { cover: 'uniforms' },
+    'signage-wayfinding': { cover: 'signage' },
+    'print-digital-media': { cover: 'printDigital' }
+  };
+  for (const [slug, mapping] of Object.entries(serviceMedia)) {
+    const service = await db.service.findUnique({ where: { slug } });
+    if (!service) continue;
+    await db.service.update({ where: { id: service.id }, data: { coverMediaId: media[mapping.cover].id } });
+    await db.serviceMedia.deleteMany({ where: { serviceId: service.id } });
+    const gallery = mapping.gallery ?? [];
+    if (gallery.length) {
+      await db.serviceMedia.createMany({
+        data: gallery.map((mediaKey, index) => ({
+          serviceId: service.id,
+          mediaId: media[mediaKey].id,
+          role: 'gallery',
+          sortOrder: index
+        }))
+      });
+    }
+    await replaceSeedUsages('Service', service.id, [
+      { mediaAssetId: media[mapping.cover].id, usageRole: 'cover' },
+      ...gallery.map((mediaKey, index) => ({ mediaAssetId: media[mediaKey].id, usageRole: `gallery:${index}` }))
+    ]);
+  }
+
+  const leader = await db.leadershipMember.findFirst({
+    where: { translations: { some: { locale: 'en', name: 'Sultan Hijazi' } } }
+  });
+  if (leader) {
+    await db.leadershipMember.update({ where: { id: leader.id }, data: { imageId: media.leadership.id } });
+    await replaceSeedUsages('LeadershipMember', leader.id, [{ mediaAssetId: media.leadership.id, usageRole: 'image' }]);
+  }
+}
+
 const pageDefs = [
   ['home','home','Home','الرئيسية',true],
   ['about','about','About','من نحن',true],
@@ -185,8 +485,9 @@ async function seedPeople(){
 }
 
 async function main(){
+ const sourceMediaRows=await seedSourceMedia();
  await db.siteSettings.upsert({where:{id:'site'},update:{defaultLocale:'ar',websiteUrl:'https://solutiongate.sa',brandNameEnglish:'Solutions Gate',brandNameArabic:'بوابة الحلول للفعاليات',contactPhonePrimary:'+966555190115',contactPhoneSecondary:'+966501395211',contactEmail:null,addressLine1:null,addressLine2:null,city:null,region:null,country:null,mapUrl:null,contactFormEnabled:true,inquiryFormNoticeEn:'Submitted contact information is used to respond to this inquiry.',inquiryFormNoticeAr:'تُستخدم بيانات التواصل المقدمة للرد على هذا الاستفسار.'},create:{id:'site',defaultLocale:'ar',websiteUrl:'https://solutiongate.sa',brandNameEnglish:'Solutions Gate',brandNameArabic:'بوابة الحلول للفعاليات',contactPhonePrimary:'+966555190115',contactPhoneSecondary:'+966501395211',contactFormEnabled:true,inquiryFormNoticeEn:'Submitted contact information is used to respond to this inquiry.',inquiryFormNoticeAr:'تُستخدم بيانات التواصل المقدمة للرد على هذا الاستفسار.'}});
- const map=await seedPages();await seedNav(map);await seedServices();await seedProcess();await seedMetrics();await seedCapabilities();await seedPeople();
+ const map=await seedPages();await seedNav(map);await seedServices();await seedProcess();await seedMetrics();await seedCapabilities();await seedPeople();await wireSourceMedia(sourceMediaRows,map);
  console.log('Phase 2 source-supported seed complete.');
 }
 main().catch((e)=>{console.error(e);process.exit(1)}).finally(async()=>db.$disconnect());
