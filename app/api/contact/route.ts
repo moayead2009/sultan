@@ -4,14 +4,15 @@ import { checkRateLimit } from '@/lib/rate-limit';
 import { persistInquiry } from '@/lib/inquiries';
 import { logger } from '@/lib/logger';
 import { verifyTurnstile } from '@/lib/turnstile';
+import { env } from '@/lib/env';
 
 export async function POST(request: Request) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
-  const limit = checkRateLimit('contact:' + ip, 5, 600);
+  const limit = checkRateLimit('contact:' + ip, env.RATE_LIMIT_MAX, env.RATE_LIMIT_WINDOW_SECONDS);
   if (!limit.allowed) {
     return NextResponse.json(
       { error: 'Too many requests. Please try again later.' },
-      { status: 429, headers: { 'retry-after': String(limit.retryAfter ?? 600) } }
+      { status: 429, headers: { 'retry-after': String(limit.retryAfter ?? env.RATE_LIMIT_WINDOW_SECONDS) } }
     );
   }
 
