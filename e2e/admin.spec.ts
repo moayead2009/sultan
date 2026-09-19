@@ -197,12 +197,16 @@ test('admin remains usable at desktop tablet and mobile widths', async ({ page }
   }
 });
 
-test('unauthenticated media API rejects upload attempts', async ({ request }) => {
-  const response = await request.post('/api/admin/media', {
-    multipart: {
-      altEn: 'No access',
-      altAr: 'لا وصول'
-    }
+test('media API enforces origin and authentication', async ({ request }) => {
+  const crossOrigin = await request.post('/api/admin/media', {
+    headers: { origin: 'https://evil.example.invalid' },
+    multipart: { altEn: 'No access', altAr: 'لا وصول' }
   });
-  expect(response.status()).toBe(401);
+  expect(crossOrigin.status()).toBe(403);
+
+  const sameOriginAnonymous = await request.post('/api/admin/media', {
+    headers: { origin: 'http://localhost:3000' },
+    multipart: { altEn: 'No access', altAr: 'لا وصول' }
+  });
+  expect(sameOriginAnonymous.status()).toBe(401);
 });
