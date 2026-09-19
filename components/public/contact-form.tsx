@@ -7,11 +7,13 @@ import type { Locale } from '@/lib/i18n';
 export function ContactForm({
   locale,
   services,
-  turnstileSiteKey
+  turnstileSiteKey,
+  notice
 }: {
   locale: Locale;
   services: Array<{ id: string; name: string }>;
   turnstileSiteKey?: string;
+  notice?: string | null;
 }) {
   const [state, setState] = useState<'idle'|'sending'|'success'|'error'>('idle');
   const [message, setMessage] = useState('');
@@ -53,7 +55,7 @@ export function ContactForm({
       <label>{locale === 'ar' ? 'الخدمة' : 'Service interest'}<select name="serviceId" defaultValue=""><option value="">{locale === 'ar' ? 'اختر عند الحاجة' : 'Select if applicable'}</option>{services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}</select></label>
       <label>{locale === 'ar' ? 'الموضوع' : 'Subject'}<input name="subject" maxLength={180} /></label>
       <label>{locale === 'ar' ? 'الرسالة' : 'Message'}<textarea name="message" required minLength={10} maxLength={5000} rows={7} /></label>
-      <label className="consent"><input name="consent" type="checkbox" required /> {locale === 'ar' ? 'أوافق على استخدام البيانات المقدمة للرد على هذا الاستفسار.' : 'I agree that the submitted information may be used to respond to this inquiry.'}</label>
+      <label className="consent"><input name="consent" type="checkbox" required /> {notice || (locale === 'ar' ? 'أوافق على استخدام البيانات المقدمة للرد على هذا الاستفسار.' : 'I agree that the submitted information may be used to respond to this inquiry.')}</label>
       {turnstileSiteKey ? <div className="cf-turnstile" data-sitekey={turnstileSiteKey} /> : null}
       <button className="button" disabled={state === 'sending'}>{state === 'sending' ? (locale === 'ar' ? 'جارٍ الإرسال…' : 'Sending…') : (locale === 'ar' ? 'إرسال الاستفسار' : 'Send inquiry')}</button>
       {message ? <p role="status" className={state === 'error' ? 'form-status error' : 'form-status'}>{message}</p> : null}
