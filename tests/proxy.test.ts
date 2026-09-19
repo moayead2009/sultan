@@ -42,9 +42,12 @@ describe('database redirects in request proxy', () => {
     expect(response.headers.get('x-middleware-request-x-route-locale')).toBe('en');
   });
 
-  it('does not consult public redirects for admin routes', async () => {
-    const response = await proxy(new NextRequest('https://example.test/admin/users'));
-    expect(mocks.findUnique).not.toHaveBeenCalled();
-    expect(response.status).toBe(200);
+  it('does not consult redirects for protected routes', async () => {
+    for (const path of ['/admin/users', '/preview/en/about', '/api/internal', '/internal/health']) {
+      mocks.findUnique.mockClear();
+      const response = await proxy(new NextRequest('https://example.test' + path));
+      expect(mocks.findUnique).not.toHaveBeenCalled();
+      expect(response.status).toBe(200);
+    }
   });
 });

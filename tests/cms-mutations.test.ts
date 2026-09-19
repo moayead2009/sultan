@@ -25,9 +25,10 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
 import { createNavigationItem, updateNavigationItem } from '@/app/(dashboard)/admin/actions/navigation';
 import { createSection, updateSection } from '@/app/(dashboard)/admin/actions/sections';
+import { setUserRole } from '@/app/(dashboard)/admin/actions/users';
 
 const suffix = randomUUID().slice(0, 8);
-const ids: { user?: string; page?: string; menu?: string; media?: string; section?: string; nav?: string } = {};
+const ids: { user?: string; secondOwner?: string; page?: string; menu?: string; media?: string; section?: string; nav?: string } = {};
 
 beforeAll(async () => {
   const user = await db.user.upsert({
@@ -81,6 +82,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  if (ids.secondOwner) await db.user.deleteMany({ where: { id: ids.secondOwner } });
   if (ids.page) await db.page.deleteMany({ where: { id: ids.page } });
   if (ids.menu) await db.navigationMenu.deleteMany({ where: { id: ids.menu } });
   if (ids.media) await db.mediaAsset.deleteMany({ where: { id: ids.media } });
@@ -89,6 +91,61 @@ afterAll(async () => {
 });
 
 describe('core Phase 1 CMS mutations', () => {
+  it('keeps role changes OWNER-only and prevents demoting the last active OWNER', async () => {
+    auth.requireAdmin.mockClear();
+
+    const demoteLast = new FormData();
+    demoteLast.set('id', ids.user!);
+    demoteLast.set('role', 'ADMIN');
+    await expect(setUserRole(demoteLast)).rejects.toThrow(/last active OWNER/i);
+    expect(auth.requireAdmin).toHaveBeenCalledWith(['OWNER']);
+
+    const second = await db.user.create({
+      data: {
+        name: 'Second Owner',
+        email: `phase1-second-${suffix}@example.invalid`,
+        passwordHash: 'not-used',
+        role: 'OWNER',
+        status: 'ACTIVE'
+      }
+    });
+    ids.secondOwner = second.id;
+
+    await setUserRole(demoteLast);
+    expect((await db.user.findUniqueOrThrow({ where: { id: ids.user } })).role).toBe('ADMIN');
+
+    const promoteAgain = new FormData();
+    promoteAgain.set('id', ids.user!);
+    promoteAgain.set('role', 'OWNER');
+    await setUserRole(promoteAgain);
+    expect((await db.user.findUniqueOrThrow({ where: { id: ids.user } })).role).toBe('OWNER');
+  });
+
+  it('materializes all Phase 1 schema indexes through migrations', async () => {
+    const expected = [
+      'User_status_email_idx',
+      'PageSectionMedia_mediaId_idx',
+      'ServiceFeature_serviceId_sortOrder_idx',
+      'ProjectMedia_mediaId_idx',
+      'MediaAsset_kind_createdAt_idx',
+      'AuditLog_actorUserId_createdAt_idx'
+    ];
+    const rows = await db.$queryRaw<Array<{ indexname: string }>>`
+      SELECT indexname
+      FROM pg_indexes
+      WHERE schemaname = 'public'
+        AND indexname IN (
+          'User_status_email_idx',
+          'PageSectionMedia_mediaId_idx',
+          'ServiceFeature_serviceId_sortOrder_idx',
+          'ProjectMedia_mediaId_idx',
+          'MediaAsset_kind_createdAt_idx',
+          'AuditLog_actorUserId_createdAt_idx'
+        )
+    `;
+    expect(new Set(rows.map((row) => row.indexname))).toEqual(new Set(expected));
+  });
+
   it('creates and edits bilingual navigation records', async () => {
     const create = new FormData();
     create.set('menuId', ids.menu!);
