@@ -26,6 +26,10 @@ for (const locale of ['en', 'ar'] as const) {
     for (const route of routes) {
       const response = await page.goto('/' + locale + route);
       expect(response?.status(), locale + route).toBe(200);
+      expect(response?.headers()['x-content-type-options']).toBe('nosniff');
+      expect(response?.headers()['x-frame-options']).toBe('DENY');
+      expect(response?.headers()['referrer-policy']).toBe('strict-origin-when-cross-origin');
+      expect(response?.headers()['content-security-policy']).toContain("frame-ancestors 'none'");
       await expect(page.locator('main')).toBeVisible();
       await expect(page.locator('html')).toHaveAttribute('lang', locale);
       await expect(page.locator('html')).toHaveAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr');
@@ -41,6 +45,22 @@ for (const locale of ['en', 'ar'] as const) {
         violation.impact === 'critical' || violation.impact === 'serious'
       );
       expect(blockers, locale + route + ': ' + blockers.map((item) => item.id).join(', ')).toEqual([]);
+    }
+  });
+
+  test('public internal links are not broken in ' + locale, async ({ page, request }) => {
+    const origins = ['', '/about', '/services', '/contact'];
+    const hrefs = new Set<string>();
+    for (const origin of origins) {
+      await page.goto('/' + locale + origin);
+      const links = await page.locator('a[href]').evaluateAll((nodes) => nodes.map((node) => (node as HTMLAnchorElement).getAttribute('href') || ''));
+      for (const href of links) {
+        if (href.startsWith('/' + locale) && !href.includes('#')) hrefs.add(href);
+      }
+    }
+    for (const href of hrefs) {
+      const response = await request.get(href);
+      expect(response.status(), href).toBeLessThan(400);
     }
   });
 
