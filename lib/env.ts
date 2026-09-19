@@ -16,12 +16,15 @@ const schema = z.object({
   OBJECT_STORAGE_ACCESS_KEY: z.string().optional(),
   OBJECT_STORAGE_SECRET_KEY: z.string().optional(),
   OBJECT_STORAGE_PUBLIC_URL: z.string().optional(),
-  MAIL_PROVIDER: z.string().default('none'),
+  MAIL_PROVIDER: z.enum(['none', 'resend']).default('none'),
   MAIL_FROM: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().int().positive().default(587),
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
+  TURNSTILE_SECRET_KEY: z.string().optional(),
   RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().positive().default(600),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
   ERROR_MONITORING_DSN: z.string().optional()
@@ -34,22 +37,12 @@ const fallback = {
   NEXTAUTH_URL: 'http://localhost:3000'
 };
 
-const parsed = schema.safeParse({
-  ...fallback,
-  ...process.env
-});
-
-if (!parsed.success) {
-  throw new Error('Invalid environment configuration: ' + parsed.error.message);
-}
+const parsed = schema.safeParse({ ...fallback, ...process.env });
+if (!parsed.success) throw new Error('Invalid environment configuration: ' + parsed.error.message);
 
 if (process.env.NODE_ENV === 'production') {
-  if (!process.env.AUTH_SECRET || process.env.AUTH_SECRET.includes('development-only')) {
-    throw new Error('AUTH_SECRET must be explicitly configured in production.');
-  }
-  if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL must be explicitly configured in production.');
-  }
+  if (!process.env.AUTH_SECRET || process.env.AUTH_SECRET.includes('development-only')) throw new Error('AUTH_SECRET must be explicitly configured in production.');
+  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL must be explicitly configured in production.');
 }
 
 assertProductionRuntimeRequirements({
