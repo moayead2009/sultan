@@ -71,6 +71,20 @@ th,td { text-align: start; padding: .7rem; border-bottom: 1px solid var(--border
 .stack { display: grid; gap: 1rem; }
 .split,.form-row { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
 
+.skip-link {
+  position: fixed;
+  inset-block-start: .5rem;
+  inset-inline-start: .5rem;
+  z-index: 1000;
+  padding: .75rem 1rem;
+  border-radius: .7rem;
+  background: #fff;
+  color: var(--brand-purple-deep);
+  box-shadow: var(--shadow);
+  transform: translateY(-160%);
+}
+.skip-link:focus { transform: translateY(0); }
+
 /* Public chrome */
 .site-header { position: sticky; inset-block-start: 0; z-index: 50; background: rgba(255,255,255,.88); backdrop-filter: blur(18px); border-block-end: 1px solid rgba(90,47,121,.1); }
 .site-header__inner { min-height: 78px; display: flex; align-items: center; gap: 1.25rem; }
