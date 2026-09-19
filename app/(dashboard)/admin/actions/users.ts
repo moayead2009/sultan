@@ -27,6 +27,26 @@ export async function createUser(formData: FormData) {
   revalidatePath('/admin/users');
 }
 
+export async function setUserRole(formData: FormData) {
+  await requireOwner();
+  const id = z.string().min(1).parse(formData.get('id'));
+  const role = z.enum(['OWNER', 'ADMIN']).parse(formData.get('role'));
+
+  await db.$transaction(async (tx) => {
+    const user = await tx.user.findUniqueOrThrow({ where: { id } });
+    if (user.role === 'OWNER' && user.status === 'ACTIVE' && role === 'ADMIN') {
+      const activeOwners = await tx.user.count({ where: { role: 'OWNER', status: 'ACTIVE' } });
+      if (activeOwners <= 1) {
+        throw new Error('Cannot demote the last active OWNER.');
+      }
+    }
+    await tx.user.update({ where: { id }, data: { role } });
+  }, { isolationLevel: 'Serializable' });
+
+  await auditAdmin('ROLE_CHANGE', 'User', id, { role });
+  revalidatePath('/admin/users');
+}
+
 export async function setUserStatus(formData: FormData) {
   const session = await requireOwner();
   const id = z.string().min(1).parse(formData.get('id'));
@@ -64,7 +84,7 @@ export async function deleteUser(formData: FormData) {
   if (id === session.user.id) throw new Error('OWNER cannot hard-delete the current account.');
 
   const user = await db.user.findUniqueOrThrow({ where: { id } });
-  if (user.role === 'OWNER') {
+  if (user.role === 'OWNER' && user.status === 'ACTIVE') {
     const activeOwners = await db.user.count({ where: { role: 'OWNER', status: 'ACTIVE' } });
     if (activeOwners <= 1) throw new Error('Cannot delete the last active OWNER.');
   }
@@ -72,7 +92,6 @@ export async function deleteUser(formData: FormData) {
   await auditAdmin('DELETE', 'User', id);
   revalidatePath('/admin/users');
 }
-
 
 export async function changeOwnPassword(formData: FormData) {
   const session = await requireAdmin();

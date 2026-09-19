@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/authorization';
 import { SubmitButton } from '@/components/submit-button';
-import { createUser, deleteUser, resetUserPassword, setUserStatus } from '../actions/users';
+import { createUser, deleteUser, resetUserPassword, setUserRole, setUserStatus } from '../actions/users';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +18,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="stack">
-      <div><h1>Users</h1><p>OWNER-only account management. Disabling or resetting a password revokes active sessions.</p></div>
+      <div><h1>Users</h1><p>OWNER-only account management. Role changes, status changes and password resets are enforced server-side.</p></div>
       <form method="get" className="admin-card"><label>Search<input name="q" defaultValue={q} placeholder="Name or email" /></label><button className="button secondary">Search</button></form>
       <form action={createUser} className="admin-card form-grid">
         <h2>Create administrator</h2>
@@ -30,6 +30,16 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
         <article className="admin-card stack" key={user.id}>
           <div><strong>{user.name}</strong> · {user.email} · <span className="badge">{user.role}</span> <span className="badge">{user.status}</span></div>
           <div className="split">
+            <form action={setUserRole} className="form-grid">
+              <input type="hidden" name="id" value={user.id} />
+              <label>Role
+                <select name="role" defaultValue={user.role}>
+                  <option value="ADMIN">ADMIN</option>
+                  <option value="OWNER">OWNER</option>
+                </select>
+              </label>
+              <SubmitButton className="button secondary" confirmMessage={user.role === 'OWNER' ? 'Change this OWNER to ADMIN? The last active OWNER cannot be demoted.' : undefined}>Change role</SubmitButton>
+            </form>
             <form action={setUserStatus}>
               <input type="hidden" name="id" value={user.id} />
               <input type="hidden" name="status" value={user.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE'} />

@@ -1,11 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { isLocale } from '@/lib/i18n';
+import { isProtectedRedirectPath } from '@/lib/redirects';
 
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  if (!pathname.startsWith('/admin') && !pathname.startsWith('/preview')) {
+  if (!isProtectedRedirectPath(pathname)) {
     try {
       const rule = await db.redirect.findUnique({ where: { fromPath: pathname } });
       if (rule?.enabled && rule.toPath !== pathname) {
