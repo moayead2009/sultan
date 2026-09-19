@@ -1,8 +1,17 @@
 import { describe, expect, it, vi } from 'vitest';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { isSafeHttpUrl } from '@/lib/security-url';
 
 describe('Phase 3 application security primitives', () => {
+  it('accepts only HTTP(S) absolute URLs for public external-link fields', () => {
+    expect(isSafeHttpUrl('https://solutiongate.sa/contact')).toBe(true);
+    expect(isSafeHttpUrl('http://localhost:3000/test')).toBe(true);
+    expect(isSafeHttpUrl('javascript:alert(1)')).toBe(false);
+    expect(isSafeHttpUrl('data:text/html,unsafe')).toBe(false);
+    expect(isSafeHttpUrl('/relative')).toBe(false);
+  });
+
   it('enforces rate limits with a retry window', () => {
     const key = 'phase3-rate-' + Date.now() + '-' + Math.random();
     expect(checkRateLimit(key, 2, 60).allowed).toBe(true);
