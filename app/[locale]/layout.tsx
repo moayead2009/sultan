@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { isLocale } from '@/lib/i18n';
+import { LocaleDocument } from '@/components/public/locale-document';
 
 export default async function LocaleLayout({
   children,
@@ -10,5 +11,5 @@ export default async function LocaleLayout({
 }) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
-  return children;
+  return <><LocaleDocument locale={locale} />{children}</>;
 }
