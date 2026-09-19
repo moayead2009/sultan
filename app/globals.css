@@ -120,6 +120,8 @@ html[dir='rtl'] .hero-media::after { background:linear-gradient(270deg,rgba(255,
 .card-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1.1rem; }
 .service-card,.premium-card { border:1px solid var(--border); border-radius:1.2rem; padding:1.5rem; background:#fff; box-shadow:0 14px 40px rgba(36,19,49,.06); transition:transform .2s ease,box-shadow .2s ease; }
 .service-card:hover { transform:translateY(-5px); box-shadow:0 20px 50px rgba(36,19,49,.12); }
+.service-card__image { width:100%; aspect-ratio:16/10; object-fit:cover; border-radius:.9rem; margin-block-end:1rem; }
+.footer-logo { object-fit:contain; background:#fff; border-radius:.7rem; padding:.25rem; }
 .card-index { color:var(--brand-gold); font-weight:900; font-size:.8rem; }
 .service-card p,.premium-card p { color:var(--brand-muted); line-height:1.7; }
 .text-link { color:var(--brand-purple); font-weight:900; }
