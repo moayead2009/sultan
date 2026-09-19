@@ -4,15 +4,15 @@ This runbook prepares Phase 4 for a real production environment without inventin
 
 ## Production dependencies
 
-A production release requires Node.js 24 LTS (24.x), PostgreSQL 16+, durable S3-compatible object storage with an HTTPS public media URL, and an HTTPS reverse proxy/platform endpoint for the application. Resend, Cloudflare Turnstile and an external error-monitoring service are optional integrations and must only be enabled when their real credentials are available.
+A production release requires Node.js 24 LTS (24.x), PostgreSQL 16+, persistent media storage (either an explicit local uploads directory or S3-compatible object storage), and an HTTPS reverse proxy/platform endpoint for the application. Resend, Cloudflare Turnstile and an external error-monitoring service are optional integrations and must only be enabled when their real credentials are available.
 
 Production secrets belong in the deployment platform's secret store. Never commit `.env`, database credentials, `AUTH_SECRET`, object-storage credentials, email API keys, Turnstile secrets, monitoring DSNs or the one-time OWNER password.
 
 ## Environment checklist
 
-Start from `.env.example`, then set the actual production values in the platform. `npm run ops:preflight` verifies the production contract without printing secret values. It requires a PostgreSQL URL, a strong non-placeholder auth secret, matching HTTPS `APP_URL`/`NEXTAUTH_URL`, `STORAGE_DRIVER=s3`, object-storage bucket and HTTPS public URL, paired static storage credentials when used, paired Turnstile keys when enabled, and complete Resend values when `MAIL_PROVIDER=resend`.
+Start from `.env.example`, then set the actual production values in the platform. `npm run ops:preflight` verifies the production contract without printing secret values. It requires a PostgreSQL URL, a strong non-placeholder auth secret, matching HTTPS `APP_URL`/`NEXTAUTH_URL`, and a valid storage configuration. For `STORAGE_DRIVER=local`, `LOCAL_UPLOAD_DIR` must be explicit and persistent. For `STORAGE_DRIVER=s3`, the object-storage bucket and HTTPS public URL are required. Static storage credentials must be paired when used, as must Turnstile keys, and Resend values when `MAIL_PROVIDER=resend`.
 
-The object-storage endpoint and authentication method remain vendor-specific. Static access/secret keys are optional because a platform may provide workload/instance credentials. The public object-storage URL must be HTTPS.
+For local storage, keep the upload directory outside disposable release paths and include it in server backups. For S3, the endpoint and authentication method remain vendor-specific; static access/secret keys are optional because a platform may provide workload/instance credentials, and the public object-storage URL must be HTTPS.
 
 ## Build and migration sequence
 
@@ -51,7 +51,7 @@ The infrastructure owner must schedule the backup command outside the web proces
 
 ## Media backup strategy
 
-Database dumps do not contain media bytes. Enable the chosen object-storage provider's versioning/snapshot/replication capability or equivalent durable backup control before go-live. Retain enough history to recover accidental media deletion together with the matching database point in time. Do not copy storage access keys into backup logs or documentation.
+Database dumps do not contain media bytes. If local storage is used, back up the persistent uploads directory separately from the database and retain matching recovery points. If S3 is used, enable the provider's versioning/snapshot/replication capability or equivalent durable backup control. Do not copy storage access keys into backup logs or documentation.
 
 ## Restore and restore testing
 
@@ -65,16 +65,16 @@ Restore tests must use an isolated/disposable PostgreSQL database: create the te
 
 Application logs are structured JSON on stdout/stderr. Common secret and PII metadata keys are recursively redacted. Logging call sites must use identifiers/reason codes rather than inquiry bodies, passwords, tokens, email addresses or phone numbers. Do not send raw request bodies or environment objects to logs. If an external error-monitoring provider is enabled, configure server-side scrubbing there as a second control.
 
-Operational monitoring should cover application availability/readiness, HTTP 5xx rate, deployment failures, database capacity/connectivity, object-storage availability, backup job success, TLS/domain expiry and external email delivery failures when email is enabled. The actual provider and alert destinations remain deployment decisions.
+Operational monitoring should cover application availability/readiness, HTTP 5xx rate, deployment failures, database capacity/connectivity, media-storage availability, backup job success, TLS/domain expiry and external email delivery failures when email is enabled. The actual provider and alert destinations remain deployment decisions.
 
 ## Rollback
 
 Record the previous application SHA and the pre-migration database backup before each release. If a new application release fails but the migrated schema remains backward-compatible, switch the application back to the previous reviewed SHA and re-run health/readiness/smoke checks. Do not attempt automatic Prisma down-migrations.
 
-If the schema change is not backward-compatible, treat rollback as a coordinated data restore: remove traffic, preserve the failed database for diagnosis, restore the verified pre-migration database backup to the intended target, restore/match object-storage state if the release changed media, start the previous application SHA, then run readiness, authentication and bilingual public smoke checks before returning traffic. A database restore can discard post-backup writes, so it requires explicit incident approval.
+If the schema change is not backward-compatible, treat rollback as a coordinated data restore: remove traffic, preserve the failed database for diagnosis, restore the verified pre-migration database backup to the intended target, restore/match media-storage state if the release changed media, start the previous application SHA, then run readiness, authentication and bilingual public smoke checks before returning traffic. A database restore can discard post-backup writes, so it requires explicit incident approval.
 
 ## Production acceptance gate
 
-Do not go live until the branch CI is fully green; the real domain and TLS are active; production database/storage are durable; production secrets pass preflight; the first OWNER is provisioned securely; backups are scheduled and a restore test is recorded; external monitoring/alerts are active; email and Turnstile are either deliberately configured or deliberately disabled; `/api/health` and `/api/ready` pass; English/Arabic/RTL smoke checks pass; and unresolved owner-confirmation content remains unpublished.
+Do not go live until the branch CI is fully green; the real domain and TLS are active; production database/media storage are durable; production secrets pass preflight; the first OWNER is provisioned securely; backups are scheduled and a restore test is recorded; external monitoring/alerts are active; email and Turnstile are either deliberately configured or deliberately disabled; `/api/health` and `/api/ready` pass; English/Arabic/RTL smoke checks pass; and unresolved owner-confirmation content remains unpublished.
 
 Merge and deployment are separate owner approvals and are not performed by this Phase 4 implementation.

@@ -45,11 +45,19 @@ export function validateProductionEnvironment(env: ProductionEnvironment) {
     issues.push('APP_URL and NEXTAUTH_URL must use the same production origin.');
   }
 
-  if (value(env, 'STORAGE_DRIVER') !== 's3') {
-    issues.push('STORAGE_DRIVER must be s3 in production.');
+  const storageDriver = value(env, 'STORAGE_DRIVER') || 'local';
+  if (!['local', 's3'].includes(storageDriver)) {
+    issues.push('STORAGE_DRIVER must be local or s3.');
   }
-  if (!value(env, 'OBJECT_STORAGE_BUCKET')) issues.push('OBJECT_STORAGE_BUCKET must be configured.');
-  parseHttpsUrl(env, 'OBJECT_STORAGE_PUBLIC_URL', issues);
+
+  if (storageDriver === 'local') {
+    if (!value(env, 'LOCAL_UPLOAD_DIR')) issues.push('LOCAL_UPLOAD_DIR must be configured when STORAGE_DRIVER=local.');
+  }
+
+  if (storageDriver === 's3') {
+    if (!value(env, 'OBJECT_STORAGE_BUCKET')) issues.push('OBJECT_STORAGE_BUCKET must be configured when STORAGE_DRIVER=s3.');
+    parseHttpsUrl(env, 'OBJECT_STORAGE_PUBLIC_URL', issues);
+  }
 
   const storageAccessKey = value(env, 'OBJECT_STORAGE_ACCESS_KEY');
   const storageSecretKey = value(env, 'OBJECT_STORAGE_SECRET_KEY');

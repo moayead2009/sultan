@@ -23,12 +23,22 @@ describe('Phase 4 production preflight', () => {
     expect(validateProductionEnvironment(validProductionEnv)).toEqual([]);
   });
 
+  it('accepts local production media storage when its upload directory is explicit', () => {
+    expect(validateProductionEnvironment({
+      ...validProductionEnv,
+      STORAGE_DRIVER: 'local',
+      LOCAL_UPLOAD_DIR: 'public/uploads',
+      OBJECT_STORAGE_BUCKET: undefined,
+      OBJECT_STORAGE_PUBLIC_URL: undefined
+    })).toEqual([]);
+  });
+
   it('rejects development shortcuts and partial secret pairs', () => {
     const issues = validateProductionEnvironment({
       ...validProductionEnv,
       AUTH_SECRET: 'replace-with-me',
       APP_URL: 'http://www.example.test',
-      STORAGE_DRIVER: 'local',
+      STORAGE_DRIVER: 'invalid',
       OBJECT_STORAGE_ACCESS_KEY: 'access-only',
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'site-only'
     });
@@ -37,6 +47,17 @@ describe('Phase 4 production preflight', () => {
     expect(issues.join(' ')).toMatch(/STORAGE_DRIVER/);
     expect(issues.join(' ')).toMatch(/OBJECT_STORAGE_ACCESS_KEY/);
     expect(issues.join(' ')).toMatch(/TURNSTILE_SECRET_KEY/);
+  });
+
+  it('requires a local upload directory when local storage is selected', () => {
+    const issues = validateProductionEnvironment({
+      ...validProductionEnv,
+      STORAGE_DRIVER: 'local',
+      LOCAL_UPLOAD_DIR: '',
+      OBJECT_STORAGE_BUCKET: undefined,
+      OBJECT_STORAGE_PUBLIC_URL: undefined
+    });
+    expect(issues.join(' ')).toMatch(/LOCAL_UPLOAD_DIR/);
   });
 
   it('requires Resend credentials only when Resend is enabled', () => {

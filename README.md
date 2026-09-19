@@ -7,7 +7,7 @@ Bilingual English/Arabic corporate website and structured CMS for Solutions Gate
 - Next.js 16 App Router, React 19 and TypeScript.
 - PostgreSQL 16+ with Prisma migrations.
 - NextAuth credentials authentication with Argon2 passwords, OWNER/ADMIN authorization and server-revocable sessions.
-- S3-compatible object storage in production; local uploads are development-only.
+- Local filesystem media storage or S3-compatible object storage; this deployment may use a persistent local uploads directory.
 - Optional Resend inquiry notification after database persistence.
 - English and Arabic public content with true RTL behavior for Arabic.
 
@@ -32,7 +32,7 @@ The deterministic site root uses `SiteSettings.defaultLocale`, with Arabic as th
 
 ## Production preparation
 
-Do not place real secrets in the repository. Configure the real production environment in the deployment platform, run `npm run ops:preflight`, take a verified database backup, apply `npm run db:migrate`, build with `npm run build`, and validate `/api/health` plus `/api/ready` before traffic is switched. Production media must use `STORAGE_DRIVER=s3`; local media storage is intentionally rejected by the production runtime requirements.
+Do not place real secrets in the repository. Configure the real production environment in the deployment platform, run `npm run ops:preflight`, take a verified database backup, apply `npm run db:migrate`, build with `npm run build`, and validate `/api/health` plus `/api/ready` before traffic is switched. Production media may use `STORAGE_DRIVER=local` with an explicit persistent `LOCAL_UPLOAD_DIR`, or `STORAGE_DRIVER=s3` with a configured bucket and public URL.
 
 The first OWNER is created with the one-time `OWNER_NAME`, `OWNER_EMAIL` and `OWNER_PASSWORD` process documented in `docs/operations.md`. Remove those bootstrap inputs immediately after use.
 
