@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 const items = [
   ['Overview', '/admin'],
+  ['My account', '/admin/account'],
   ['Site settings', '/admin/site-settings'],
   ['Pages', '/admin/pages'],
   ['Sections', '/admin/sections'],
