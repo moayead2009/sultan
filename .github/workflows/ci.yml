@@ -27,8 +27,12 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/solutions_gate
       AUTH_SECRET: ci-only-secret-with-more-than-thirty-two-characters
       APP_URL: http://localhost:3000
+      NEXTAUTH_URL: http://localhost:3000
       USE_DATABASE_CONTENT: 'false'
-      STORAGE_DRIVER: local
+      STORAGE_DRIVER: s3
+      OBJECT_STORAGE_REGION: auto
+      OBJECT_STORAGE_BUCKET: ci-media
+      OBJECT_STORAGE_PUBLIC_URL: https://media.example.invalid
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

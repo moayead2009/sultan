@@ -1,9 +1,11 @@
 import { z } from 'zod';
+import { assertProductionRuntimeRequirements } from '@/lib/runtime-requirements';
 
 const schema = z.object({
   DATABASE_URL: z.string().min(1),
   AUTH_SECRET: z.string().min(24),
   APP_URL: z.string().url(),
+  NEXTAUTH_URL: z.string().url(),
   USE_DATABASE_CONTENT: z.enum(['true', 'false']).default('false'),
   STORAGE_DRIVER: z.enum(['local', 's3']).default('local'),
   LOCAL_UPLOAD_DIR: z.string().default('public/uploads'),
@@ -28,7 +30,8 @@ const schema = z.object({
 const fallback = {
   DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/solutions_gate',
   AUTH_SECRET: 'development-only-change-me-please-123456',
-  APP_URL: 'http://localhost:3000'
+  APP_URL: 'http://localhost:3000',
+  NEXTAUTH_URL: 'http://localhost:3000'
 };
 
 const parsed = schema.safeParse({
@@ -48,5 +51,13 @@ if (process.env.NODE_ENV === 'production') {
     throw new Error('DATABASE_URL must be explicitly configured in production.');
   }
 }
+
+assertProductionRuntimeRequirements({
+  nodeEnv: process.env.NODE_ENV,
+  nextAuthUrlExplicit: process.env.NEXTAUTH_URL,
+  storageDriver: parsed.data.STORAGE_DRIVER,
+  objectStorageBucket: parsed.data.OBJECT_STORAGE_BUCKET,
+  objectStoragePublicUrl: parsed.data.OBJECT_STORAGE_PUBLIC_URL
+});
 
 export const env = parsed.data;

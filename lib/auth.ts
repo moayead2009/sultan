@@ -6,9 +6,10 @@ import { logger } from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { createAuthSession, revokeAuthSession, sessionIsActive } from '@/lib/session';
 import { safeAuthRedirect } from '@/lib/security-url';
+import { env } from '@/lib/env';
 
 export const authOptions: NextAuthOptions = {
-  secret: process.env.AUTH_SECRET,
+  secret: env.AUTH_SECRET,
   useSecureCookies: process.env.NODE_ENV === 'production',
   session: {
     strategy: 'jwt',
