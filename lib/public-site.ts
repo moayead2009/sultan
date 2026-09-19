@@ -156,14 +156,14 @@ export async function getPublicEntities(locale: Locale) {
   };
 }
 
-export async function getService(slug: string, locale: Locale) {
+export async function getService(slug: string, locale: Locale, includeDraft = false) {
   const item = await db.service.findFirst({
-    where: { slug, status: 'PUBLISHED', category: { enabled: true } },
+    where: includeDraft ? { slug, category: { enabled: true } } : { slug, status: 'PUBLISHED', category: { enabled: true } },
     include: {
       translations: true,
       category: { include: { translations: true } },
       parentService: { include: { translations: true } },
-      childServices: { where: { status: 'PUBLISHED' }, orderBy: { sortOrder: 'asc' }, include: { translations: true } },
+      childServices: { where: includeDraft ? { status: { not: 'ARCHIVED' } } : { status: 'PUBLISHED' }, orderBy: { sortOrder: 'asc' }, include: { translations: true } },
       features: { where: { enabled: true }, orderBy: { sortOrder: 'asc' }, include: { translations: true } },
       coverMedia: { include: { translations: true } },
       media: { orderBy: { sortOrder: 'asc' }, include: { media: { include: { translations: true } } } },
@@ -179,17 +179,17 @@ export async function getService(slug: string, locale: Locale) {
     localizedFeatures: item.features.map((feature) => ({ ...feature, translation: localized(feature.translations, locale) })),
     localizedChildren: item.childServices.map((service) => ({ ...service, translation: localized(service.translations, locale) })),
     localizedRelated: item.relatedFrom
-      .filter((relation) => relation.targetService.status === 'PUBLISHED')
+      .filter((relation) => includeDraft ? relation.targetService.status !== 'ARCHIVED' : relation.targetService.status === 'PUBLISHED')
       .map((relation) => ({ ...relation.targetService, translation: localized(relation.targetService.translations, locale) })),
     localizedProjects: item.projects
-      .filter((relation) => relation.project.status === 'PUBLISHED')
+      .filter((relation) => includeDraft ? relation.project.status !== 'ARCHIVED' : relation.project.status === 'PUBLISHED')
       .map((relation) => ({ ...relation.project, translation: localized(relation.project.translations, locale) }))
   };
 }
 
-export async function getProject(slug: string, locale: Locale) {
+export async function getProject(slug: string, locale: Locale, includeDraft = false) {
   const item = await db.project.findFirst({
-    where: { slug, status: 'PUBLISHED' },
+    where: includeDraft ? { slug } : { slug, status: 'PUBLISHED' },
     include: {
       translations: true,
       category: { include: { translations: true } },
