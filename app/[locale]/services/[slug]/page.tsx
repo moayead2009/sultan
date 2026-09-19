@@ -6,7 +6,8 @@ import { PublicImage } from '@/components/public/media';
 import { buildServiceMetadata } from '@/lib/seo';
 import { getService, getSiteChrome } from '@/lib/public-site';
 import { isLocale } from '@/lib/i18n';
-import { JsonLd, breadcrumbStructuredData, serviceStructuredData, siteStructuredData } from '@/components/public/json-ld';
+import { JsonLd } from '@/components/public/json-ld';
+import { breadcrumbStructuredData, serviceStructuredData, siteStructuredData } from '@/lib/structured-data';
 import { env } from '@/lib/env';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
