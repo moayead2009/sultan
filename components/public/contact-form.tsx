@@ -20,9 +20,10 @@ export function ContactForm({
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     setState('sending');
     setMessage('');
-    const form = new FormData(event.currentTarget);
+    const form = new FormData(formElement);
     const payload = Object.fromEntries(form.entries());
     const response = await fetch('/api/contact', {
       method: 'POST',
@@ -31,7 +32,7 @@ export function ContactForm({
     });
     const result = await response.json().catch(() => ({}));
     if (response.ok) {
-      event.currentTarget.reset();
+      formElement.reset();
       setState('success');
       setMessage(locale === 'ar' ? 'تم استلام رسالتك بنجاح.' : 'Your inquiry was received successfully.');
     } else {
