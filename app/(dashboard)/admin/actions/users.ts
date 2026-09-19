@@ -1,6 +1,6 @@
 'use server';
 
-import { hash } from '@node-rs/argon2';
+import { hash, verify } from '@node-rs/argon2';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { db } from '@/lib/db';
@@ -71,4 +71,18 @@ export async function deleteUser(formData: FormData) {
   await db.user.delete({ where: { id } });
   await auditAdmin('DELETE', 'User', id);
   revalidatePath('/admin/users');
+}
+
+
+export async function changeOwnPassword(formData: FormData) {
+  const session = await requireAdmin();
+  const currentPassword = z.string().min(1).max(128).parse(formData.get('currentPassword'));
+  const newPassword = z.string().min(12).max(128).parse(formData.get('newPassword'));
+  const user = await db.user.findUniqueOrThrow({ where: { id: session.user.id } });
+  if (!(await verify(user.passwordHash, currentPassword))) {
+    throw new Error('Current password is incorrect.');
+  }
+  await db.user.update({ where: { id: user.id }, data: { passwordHash: await hash(newPassword) } });
+  await revokeAllUserSessions(user.id);
+  await auditAdmin('PASSWORD_CHANGE', 'User', user.id);
 }
