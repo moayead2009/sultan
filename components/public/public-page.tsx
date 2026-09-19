@@ -2,7 +2,8 @@ import type { Locale } from '@/lib/i18n';
 import type { getPublicEntities, getPublicPage, getSiteChrome } from '@/lib/public-site';
 import { Breadcrumbs, SiteFooter, SiteHeader } from '@/components/public/site-shell';
 import { SectionRenderer } from '@/components/public/section-renderer';
-import { JsonLd, breadcrumbStructuredData, siteStructuredData } from '@/components/public/json-ld';
+import { JsonLd } from '@/components/public/json-ld';
+import { breadcrumbStructuredData, siteStructuredData } from '@/lib/structured-data';
 import { env } from '@/lib/env';
 
 export function PublicPage({
