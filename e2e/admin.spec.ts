@@ -30,7 +30,7 @@ test('failed login stays on protected sign-in', async ({ page }) => {
   await page.getByLabel('Email').fill(ownerEmail);
   await page.getByLabel('Password').fill('definitely-wrong-password');
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page.getByRole('alert')).toContainText('Unable to sign in');
+  await expect(page.locator('.auth-card [role="alert"]')).toContainText('Unable to sign in');
   await expect(page).toHaveURL(/\/admin\/login/);
 });
 
