@@ -47,8 +47,8 @@ jobs:
           cache: npm
       - name: Clean install
         run: npm ci
-      - name: Production dependency audit
-        run: npm audit --omit=dev --audit-level=high
+      - name: High-severity dependency audit
+        run: npm audit --audit-level=high
       - name: Prisma generate
         run: npm run db:generate
       - name: Fresh database migration
