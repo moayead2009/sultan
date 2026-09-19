@@ -4,7 +4,7 @@ This runbook prepares Phase 4 for a real production environment without inventin
 
 ## Production dependencies
 
-A production release requires Node.js 20, PostgreSQL 16+, durable S3-compatible object storage with an HTTPS public media URL, and an HTTPS reverse proxy/platform endpoint for the application. Resend, Cloudflare Turnstile and an external error-monitoring service are optional integrations and must only be enabled when their real credentials are available.
+A production release requires Node.js 24 LTS (24.x), PostgreSQL 16+, durable S3-compatible object storage with an HTTPS public media URL, and an HTTPS reverse proxy/platform endpoint for the application. Resend, Cloudflare Turnstile and an external error-monitoring service are optional integrations and must only be enabled when their real credentials are available.
 
 Production secrets belong in the deployment platform's secret store. Never commit `.env`, database credentials, `AUTH_SECRET`, object-storage credentials, email API keys, Turnstile secrets, monitoring DSNs or the one-time OWNER password.
 
@@ -16,7 +16,7 @@ The object-storage endpoint and authentication method remain vendor-specific. St
 
 ## Build and migration sequence
 
-Use an immutable reviewed commit SHA as the release source. The deployment operator should run, in order:
+Use an immutable reviewed commit SHA as the release source. The application declares Node `>=24.0.0 <25`; production and CI must remain on Node 24.x so dependency engine requirements are enforced consistently. The deployment operator should run, in order:
 
 ```bash
 npm ci

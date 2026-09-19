@@ -6,7 +6,7 @@ The implementation branch contains the completed application plus Phase 4 produc
 
 ## Architecture and stack
 
-The application is Next.js 16/React 19/TypeScript with PostgreSQL/Prisma, private NextAuth credentials authentication, OWNER/ADMIN roles, revocable server sessions, S3-compatible production media storage and optional Resend notification. Architecture details and repository responsibilities are in `docs/architecture.md`.
+The application requires Node.js 24 LTS (24.x) and is Next.js 16/React 19/TypeScript with PostgreSQL/Prisma, private NextAuth credentials authentication, OWNER/ADMIN roles, revocable server sessions, S3-compatible production media storage and optional Resend notification. Architecture details and repository responsibilities are in `docs/architecture.md`.
 
 ## Schema and migrations
 
@@ -34,7 +34,7 @@ Keep all credentials out of Git. Preserve CSP/HSTS/security headers, same-origin
 
 ## Verification evidence
 
-The approved Phase 3 baseline was `a85164e0991c31629c882eece7ee96f64f81cd1e`, with the complete Phase 1–3 CI green before Phase 4 began. Phase 4 extends that workflow with production-preflight and backup/restore syntax gates, keeps dependency audit/migration/seed/lint/typecheck/unit/integration/E2E/accessibility/responsive/browser/build/performance coverage, and starts the performance server only after `/api/ready` becomes healthy. The final Phase 4 branch must have a fully green CI run before approval.
+The approved Phase 3 baseline was `a85164e0991c31629c882eece7ee96f64f81cd1e`, with the complete Phase 1–3 CI green before Phase 4 began. Phase 4 extends that workflow with production-preflight and backup/restore syntax gates, keeps dependency audit/migration/seed/lint/typecheck/unit/integration/E2E/accessibility/responsive/browser/build/performance coverage, and starts the performance server only after `/api/ready` becomes healthy. The final Phase 4 branch must have a fully green CI run before approval. Full CI is authoritative on pull requests targeting `main`; feature-branch push triggering is intentionally disabled to avoid duplicate expensive runs.
 
 ## Known limitations and owner/infrastructure confirmations
 

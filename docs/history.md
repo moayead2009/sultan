@@ -67,3 +67,9 @@
 - Strengthened structured-log redaction for nested secret/PII-named fields.
 - Extended CI with the production-preflight contract, backup/restore shell syntax validation and readiness/liveness startup checks while preserving all Phase 1–3 verification stages.
 - Did not add production secrets, merge to main or perform deployment.
+
+## 2026-09-19 — Phase 4 final runtime and CI correction
+
+- Standardized the supported application runtime on Node.js 24 LTS (24.x), aligned the package engine contract, lockfile root metadata, CI runtime and production documentation, and enabled strict engine checking so incompatible dependencies fail instead of emitting EBADENGINE warnings.
+- Updated GitHub Actions to current Node-24-based checkout/setup actions and removed the duplicate feature-branch push trigger; full CI is now authoritative on pull requests targeting main.
+- Added an explicit installed dependency-tree validation before the high-severity dependency audit. No security or quality gate was removed or weakened.

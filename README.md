@@ -17,7 +17,7 @@ Bilingual English/Arabic corporate website and structured CMS for Solutions Gate
 
 ## Local setup
 
-Use Node.js 20 and PostgreSQL 16+. Copy `.env.example` to `.env`, set a local `DATABASE_URL` and a long `AUTH_SECRET`, then run:
+Use Node.js 24 LTS (24.x) and PostgreSQL 16+. Copy `.env.example` to `.env`, set a local `DATABASE_URL` and a long `AUTH_SECRET`, then run:
 
 ```bash
 npm ci
@@ -52,4 +52,4 @@ Read `docs/architecture.md` for the application/data design, `docs/operations.md
 
 ## Verification
 
-The required verification path is the repository CI workflow: clean install, high-severity dependency audit, Prisma generation, fresh migration and seed, production-preflight contract, shell safety checks, lint, typecheck, unit/integration tests, Playwright E2E, accessibility/responsive/browser matrix, production build, readiness/liveness checks and performance budgets. Phase 4 is not a deployment authorization; merge and deployment remain explicit owner actions.
+The required verification path is the pull-request CI workflow targeting `main` (feature-branch pushes do not run a duplicate full workflow): clean install, high-severity dependency audit, Prisma generation, fresh migration and seed, production-preflight contract, shell safety checks, lint, typecheck, unit/integration tests, Playwright E2E, accessibility/responsive/browser matrix, production build, readiness/liveness checks and performance budgets. Phase 4 is not a deployment authorization; merge and deployment remain explicit owner actions.

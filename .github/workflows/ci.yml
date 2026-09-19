@@ -1,8 +1,6 @@
 name: CI
 
 on:
-  push:
-    branches: ['feature/**']
   pull_request:
     branches: [main]
 
@@ -39,14 +37,17 @@ jobs:
       OBJECT_STORAGE_BUCKET: ci-media
       OBJECT_STORAGE_PUBLIC_URL: https://media.example.invalid
       MAIL_PROVIDER: none
+      NPM_CONFIG_ENGINE_STRICT: 'true'
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20.19.0
+          node-version: '24'
           cache: npm
       - name: Clean install
         run: npm ci
+      - name: Validate installed dependency tree
+        run: npm ls --all
       - name: High-severity dependency audit
         run: npm audit --audit-level=high
       - name: Prisma generate
