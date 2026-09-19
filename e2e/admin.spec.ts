@@ -12,7 +12,15 @@ import {
 
 test.describe.configure({ mode: 'serial' });
 
+let loginIpSequence = 10;
+
+async function useIsolatedLoginIp(page: Page) {
+  loginIpSequence += 1;
+  await page.setExtraHTTPHeaders({ 'x-forwarded-for': '203.0.113.' + loginIpSequence });
+}
+
 async function login(page: Page, email: string, password: string) {
+  await useIsolatedLoginIp(page);
   await page.goto('/admin/login');
   await page.getByLabel('Email').fill(email);
   await page.getByLabel('Password').fill(password);
@@ -26,6 +34,7 @@ test.beforeAll(async () => {
 });
 
 test('failed login stays on protected sign-in', async ({ page }) => {
+  await useIsolatedLoginIp(page);
   await page.goto('/admin/login');
   await page.getByLabel('Email').fill(ownerEmail);
   await page.getByLabel('Password').fill('definitely-wrong-password');
@@ -171,8 +180,11 @@ test('SEO editing and inquiry status management work through admin UI', async ({
 
   await login(page, ownerEmail, ownerPassword);
   await page.goto('/admin/seo');
-  const seoForm = page.locator('form.admin-card').filter({ hasText: 'Page: phase3-e2e-page' }).filter({ hasText: 'EN' });
-  await seoForm.getByLabel('Title').fill('Phase 3 SEO Updated');
+  const seoForm = page.locator('form.admin-card')
+    .filter({ has: page.locator('input[name="ownerId"][value="' + fixture.page.id + '"]') })
+    .filter({ has: page.locator('input[name="locale"][value="en"]') });
+  await expect(seoForm).toHaveCount(1);
+  await seoForm.locator('input[name="title"]').fill('Phase 3 SEO Updated');
   await seoForm.getByRole('button', { name: 'Save SEO' }).click();
   await expect.poll(async () =>
     (await db.seoMetadata.findUniqueOrThrow({
