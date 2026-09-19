@@ -16,20 +16,21 @@ export default async function PreviewPage({
 }) {
   await requireAdmin();
   const resolved = await params;
-  if (!isLocale(resolved.locale)) notFound();
+  const locale = locale;
+  if (!isLocale(locale)) notFound();
   const parts = resolved.slug ?? [];
 
   if (parts[0] === 'services' && parts[1]) {
-    const service = await getService(parts[1], resolved.locale, true);
+    const service = await getService(parts[1], locale, true);
     if (!service) notFound();
     return <main className="container-shell" style={{ paddingBlock: '3rem' }}>
       <p className="badge">Authenticated draft preview · {service.status}</p>
       <p><Link href="/admin/services">← Services CMS</Link></p>
       <h1>{service.translation?.name}</h1>
       <p>{service.translation?.shortDescription}</p>
-      {service.coverMedia ? <PublicImage asset={service.coverMedia} locale={resolved.locale} className="section-media" /> : null}
+      {service.coverMedia ? <PublicImage asset={service.coverMedia} locale={locale} className="section-media" /> : null}
       <section className="admin-card" style={{ marginBlock: '1rem' }}>
-        <h2>{resolved.locale === 'ar' ? 'المحتوى' : 'Detailed content'}</h2>
+        <h2>{locale === 'ar' ? 'المحتوى' : 'Detailed content'}</h2>
         <p style={{ whiteSpace: 'pre-line' }}>{service.translation?.detailedContent}</p>
       </section>
       {service.localizedFeatures.map((feature) => <section className="admin-card" key={feature.id} style={{ marginBlock: '1rem' }}><h3>{feature.translation?.title}</h3><p>{feature.translation?.description}</p></section>)}
@@ -37,16 +38,16 @@ export default async function PreviewPage({
   }
 
   if (parts[0] === 'projects' && parts[1]) {
-    const project = await getProject(parts[1], resolved.locale, true);
+    const project = await getProject(parts[1], locale, true);
     if (!project) notFound();
     return <main className="container-shell" style={{ paddingBlock: '3rem' }}>
       <p className="badge">Authenticated draft preview · {project.status}</p>
       <p><Link href="/admin/projects">← Projects CMS</Link></p>
       <h1>{project.translation?.title}</h1>
       <p>{project.translation?.summary}</p>
-      {project.coverMedia ? <PublicImage asset={project.coverMedia} locale={resolved.locale} className="section-media" /> : null}
+      {project.coverMedia ? <PublicImage asset={project.coverMedia} locale={locale} className="section-media" /> : null}
       {project.translation?.detailedDescription ? <section className="admin-card" style={{ marginBlock: '1rem' }}><p style={{ whiteSpace: 'pre-line' }}>{project.translation.detailedDescription}</p></section> : null}
-      {project.media.length ? <div className="gallery-grid">{project.media.map((entry) => <PublicImage key={entry.id} asset={entry.media} locale={resolved.locale} />)}</div> : null}
+      {project.media.length ? <div className="gallery-grid">{project.media.map((entry) => <PublicImage key={entry.id} asset={entry.media} locale={locale} />)}</div> : null}
     </main>;
   }
 
@@ -63,7 +64,7 @@ export default async function PreviewPage({
     }
   });
   if (!page) notFound();
-  const translation = page.translations.find((row) => row.locale === resolved.locale);
+  const translation = page.translations.find((row) => row.locale === locale);
   if (!translation) notFound();
 
   return <main className="container-shell" style={{ paddingBlock: '3rem' }}>
@@ -72,7 +73,7 @@ export default async function PreviewPage({
     <h1>{translation.title}</h1>
     {translation.summary ? <p>{translation.summary}</p> : null}
     {page.sections.map((section) => {
-      const sectionCopy = section.translations.find((row) => row.locale === resolved.locale);
+      const sectionCopy = section.translations.find((row) => row.locale === locale);
       return <section key={section.id} className="admin-card" style={{ marginBlock: '1rem' }}>
         <small>{section.sectionType}</small>
         <h2>{sectionCopy?.title ?? section.key}</h2>
