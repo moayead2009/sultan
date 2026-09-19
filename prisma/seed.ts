@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { db } from '../lib/db';
 
 const pageDefs = [
@@ -137,7 +138,7 @@ async function seedPages(){
  for(const [pageSlug,list] of Object.entries(sections)){
   const pageId=map.get(pageSlug)!;
   for(const item of list){
-   const section=await db.pageSection.upsert({where:{pageId_key:{pageId,key:item.key}},update:{sectionType:item.type,sortOrder:item.order,enabled:true,settingsVersion:1,settingsJson:item.settings,primaryCtaPageId:item.primary?map.get(item.primary):null,secondaryCtaPageId:item.secondary?map.get(item.secondary):null},create:{pageId,key:item.key,sectionType:item.type,sortOrder:item.order,enabled:true,settingsVersion:1,settingsJson:item.settings,primaryCtaPageId:item.primary?map.get(item.primary):null,secondaryCtaPageId:item.secondary?map.get(item.secondary):null}});
+   const section=await db.pageSection.upsert({where:{pageId_key:{pageId,key:item.key}},update:{sectionType:item.type,sortOrder:item.order,enabled:true,settingsVersion:1,settingsJson:item.settings as Prisma.InputJsonValue,primaryCtaPageId:item.primary?map.get(item.primary):null,secondaryCtaPageId:item.secondary?map.get(item.secondary):null},create:{pageId,key:item.key,sectionType:item.type,sortOrder:item.order,enabled:true,settingsVersion:1,settingsJson:item.settings as Prisma.InputJsonValue,primaryCtaPageId:item.primary?map.get(item.primary):null,secondaryCtaPageId:item.secondary?map.get(item.secondary):null}});
    for(const locale of ['en','ar'] as const){const copy=item[locale];await db.pageSectionTranslation.upsert({where:{sectionId_locale:{sectionId:section.id,locale}},update:copy,create:{sectionId:section.id,locale,...copy}});}
   }
  }
