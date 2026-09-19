@@ -1,0 +1,47 @@
+'use client';
+
+import { useState } from 'react';
+import type { Locale } from '@/lib/i18n';
+
+export function ContactForm({ locale, services }: { locale: Locale; services: Array<{ id: string; name: string }> }) {
+  const [state, setState] = useState<'idle'|'sending'|'success'|'error'>('idle');
+  const [message, setMessage] = useState('');
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setState('sending');
+    setMessage('');
+    const form = new FormData(event.currentTarget);
+    const payload = Object.fromEntries(form.entries());
+    const response = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ ...payload, locale })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (response.ok) {
+      event.currentTarget.reset();
+      setState('success');
+      setMessage(locale === 'ar' ? 'تم استلام رسالتك بنجاح.' : 'Your inquiry was received successfully.');
+    } else {
+      setState('error');
+      setMessage(result.error || (locale === 'ar' ? 'تعذر إرسال الطلب. حاول مرة أخرى.' : 'Unable to submit the inquiry. Please try again.'));
+    }
+  }
+  return <form className="contact-form" onSubmit={submit}>
+    <div className="honeypot" aria-hidden="true"><label>Website<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
+    <div className="form-row">
+      <label>{locale === 'ar' ? 'الاسم' : 'Name'}<input name="name" required maxLength={120} /></label>
+      <label>{locale === 'ar' ? 'المنشأة / الشركة' : 'Organization'}<input name="organization" maxLength={160} /></label>
+    </div>
+    <div className="form-row">
+      <label>{locale === 'ar' ? 'البريد الإلكتروني' : 'Email'}<input name="email" type="email" required maxLength={200} /></label>
+      <label>{locale === 'ar' ? 'الهاتف' : 'Phone'}<input name="phone" type="tel" maxLength={60} /></label>
+    </div>
+    <label>{locale === 'ar' ? 'الخدمة' : 'Service interest'}<select name="serviceId" defaultValue=""><option value="">{locale === 'ar' ? 'اختر عند الحاجة' : 'Select if applicable'}</option>{services.map((service) => <option key={service.id} value={service.id}>{service.name}</option>)}</select></label>
+    <label>{locale === 'ar' ? 'الموضوع' : 'Subject'}<input name="subject" maxLength={180} /></label>
+    <label>{locale === 'ar' ? 'الرسالة' : 'Message'}<textarea name="message" required minLength={10} maxLength={5000} rows={7} /></label>
+    <label className="consent"><input name="consent" type="checkbox" required /> {locale === 'ar' ? 'أوافق على استخدام البيانات المقدمة للرد على هذا الاستفسار.' : 'I agree that the submitted information may be used to respond to this inquiry.'}</label>
+    <button className="button" disabled={state === 'sending'}>{state === 'sending' ? (locale === 'ar' ? 'جارٍ الإرسال…' : 'Sending…') : (locale === 'ar' ? 'إرسال الاستفسار' : 'Send inquiry')}</button>
+    {message ? <p role="status" className={state === 'error' ? 'form-status error' : 'form-status'}>{message}</p> : null}
+  </form>;
+}
