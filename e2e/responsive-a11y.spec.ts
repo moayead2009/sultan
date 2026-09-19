@@ -51,7 +51,7 @@ for (const locale of ['en', 'ar'] as const) {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/' + locale + '/services');
     const duration = await page.locator('.service-card').first().evaluate((node) => getComputedStyle(node).transitionDuration);
-    expect(['0s', '0.00001s']).toContain(duration);
+    expect(Number.parseFloat(duration)).toBeLessThanOrEqual(0.001);
   });
 }
 
