@@ -39,6 +39,10 @@ async function measure(page: import('@playwright/test').Page, route: string, vie
 
   const response = await page.goto(route, { waitUntil: 'networkidle' });
   expect(response?.status()).toBe(200);
+  expect(response?.headers()['strict-transport-security']).toContain('max-age=31536000');
+  const csp = response?.headers()['content-security-policy'] || '';
+  expect(csp).toContain("object-src 'none'");
+  expect(csp).not.toContain("'unsafe-eval'");
   await page.waitForTimeout(750);
 
   return page.evaluate(() => {
