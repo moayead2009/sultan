@@ -40,7 +40,7 @@ export default async function ServiceDetail({ params }: { params: Promise<{ loca
     })} />
     <SiteHeader data={chrome} />
     <Breadcrumbs locale={locale} items={breadcrumbs} />
-    <main>
+    <main id="main-content">
       <section className="detail-hero"><div className="container-shell detail-hero__grid"><div>
         <p className="eyebrow">{service.categoryTranslation?.name}</p>
         <h1>{service.translation?.name}</h1>
