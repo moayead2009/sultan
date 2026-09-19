@@ -30,13 +30,14 @@ function Heading({ title, eyebrow, body }: { title?: string | null; eyebrow?: st
 
 export function CapabilityMatrix({ locale, entities }: { locale: Locale; entities: Entities }) {
   if (!entities.capabilityPackages.length || !entities.capabilityFeatures.length) return null;
+  const gridStyle = { gridTemplateColumns: 'minmax(220px,1.3fr) repeat(' + entities.capabilityPackages.length + ', minmax(160px,1fr))' };
   return <div className="capability-wrap">
     <div className="capability-table" role="table" aria-label={locale === 'ar' ? 'مقارنة باقات التنفيذ' : 'Execution package comparison'}>
-      <div className="capability-row capability-head" role="row">
+      <div className="capability-row capability-head" role="row" style={gridStyle}>
         <div role="columnheader">{locale === 'ar' ? 'الخدمة والميزة' : 'Service & advantage'}</div>
         {entities.capabilityPackages.map((pkg) => <div role="columnheader" key={pkg.id}>{pkg.translation?.name}</div>)}
       </div>
-      {entities.capabilityFeatures.map((feature) => <div className="capability-row" role="row" key={feature.id}>
+      {entities.capabilityFeatures.map((feature) => <div className="capability-row" role="row" key={feature.id} style={gridStyle}>
         <div role="rowheader"><strong>{feature.translation?.name}</strong>{feature.translation?.description ? <small>{feature.translation.description}</small> : null}</div>
         {entities.capabilityPackages.map((pkg) => {
           const value = feature.values.find((item) => item.capabilityPackageId === pkg.id);
@@ -60,7 +61,7 @@ export function CapabilityMatrix({ locale, entities }: { locale: Locale; entitie
   </div>;
 }
 
-export function SectionRenderer({ section, locale, entities }: { section: Section; locale: Locale; entities: Entities }) {
+export function SectionRenderer({ section, locale, entities, contactFormEnabled = true }: { section: Section; locale: Locale; entities: Entities; contactFormEnabled?: boolean }) {
   const copy = copyFor(section, locale);
   const primaryHref = ctaHref(section, locale, true);
   const secondaryHref = ctaHref(section, locale, false);
@@ -93,15 +94,33 @@ export function SectionRenderer({ section, locale, entities }: { section: Sectio
     </div></section>;
   }
 
-  if (section.sectionType === 'featuredServices' || section.sectionType === 'serviceIndex') {
-    const max = section.sectionType === 'featuredServices' && typeof settings.maxItems === 'number' ? settings.maxItems : entities.services.length;
-    const services = (section.sectionType === 'featuredServices' ? entities.services.filter((item) => item.featured) : entities.services).slice(0, max);
+  if (section.sectionType === 'featuredServices') {
+    const max = typeof settings.maxItems === 'number' ? settings.maxItems : 6;
+    const services = entities.services.filter((item) => item.featured).slice(0, max);
     if (!services.length) return null;
     return <section className="public-section"><div className="container-shell"><Heading title={copy?.title} body={copy?.body} />
       <div className="card-grid">{services.map((service) => <Link className="service-card" href={`/${locale}/services/${service.slug}`} key={service.id}>
-        <span className="card-index">{String(service.sortOrder + 1).padStart(2,'0')}</span>
+        <span className="card-index">{String(service.sortOrder).padStart(2,'0')}</span>
         <h3>{service.translation?.name}</h3><p>{service.translation?.shortDescription}</p><span className="text-link">{locale === 'ar' ? 'استكشف الخدمة' : 'Explore service'} <b aria-hidden="true">↗</b></span>
       </Link>)}</div>
+    </div></section>;
+  }
+
+  if (section.sectionType === 'serviceIndex') {
+    if (!entities.services.length) return null;
+    const groups = entities.services.reduce((map, service) => {
+      const current = map.get(service.categoryId) || [];
+      current.push(service);
+      map.set(service.categoryId, current);
+      return map;
+    }, new Map<string, typeof entities.services>());
+    return <section className="public-section"><div className="container-shell"><Heading title={copy?.title} body={copy?.body} />
+      <div className="service-groups">{[...groups.values()].map((services) => <section className="service-group" key={services[0].categoryId}>
+        <div className="service-group__heading"><h3>{services[0].categoryTranslation?.name}</h3>{services[0].categoryTranslation?.shortDescription ? <p>{services[0].categoryTranslation.shortDescription}</p> : null}</div>
+        <div className="card-grid">{services.map((service) => <Link className="service-card" href={`/${locale}/services/${service.slug}`} key={service.id}>
+          <span className="card-index">{String(service.sortOrder).padStart(2,'0')}</span><h3>{service.translation?.name}</h3><p>{service.translation?.shortDescription}</p><span className="text-link">{locale === 'ar' ? 'استكشف الخدمة' : 'Explore service'} <b aria-hidden="true">↗</b></span>
+        </Link>)}</div>
+      </section>)}</div>
     </div></section>;
   }
 
@@ -112,15 +131,28 @@ export function SectionRenderer({ section, locale, entities }: { section: Sectio
     </div></section>;
   }
 
-  if (section.sectionType === 'featuredProjects' || section.sectionType === 'projectIndex') {
-    const max = section.sectionType === 'featuredProjects' && typeof settings.maxItems === 'number' ? settings.maxItems : entities.projects.length;
-    const projects = (section.sectionType === 'featuredProjects' ? entities.projects.filter((item) => item.featured) : entities.projects).slice(0, max);
+  if (section.sectionType === 'featuredProjects') {
+    const max = typeof settings.maxItems === 'number' ? settings.maxItems : 4;
+    const projects = entities.projects.filter((item) => item.featured).slice(0, max);
     if (!projects.length) return null;
     return <section className="public-section"><div className="container-shell"><Heading title={copy?.title} body={copy?.body} />
       <div className="project-grid">{projects.map((project) => <Link className="project-card" href={`/${locale}/projects/${project.slug}`} key={project.id}>
         {project.coverMedia ? <PublicImage asset={project.coverMedia} locale={locale} /> : <div className="project-art" aria-hidden="true" />}
         <div><h3>{project.translation?.title}</h3><p>{project.translation?.summary}</p></div>
       </Link>)}</div>
+    </div></section>;
+  }
+
+  if (section.sectionType === 'projectIndex') {
+    return <section className="public-section"><div className="container-shell"><Heading title={copy?.title} body={copy?.body} />
+      <nav className="project-filters" aria-label={locale === 'ar' ? 'تصفية المشاريع' : 'Project filters'}>
+        <Link href={`/${locale}/projects`}>{locale === 'ar' ? 'الكل' : 'All'}</Link>
+        {entities.projectCategories.map((category) => <Link key={category.id} href={`/${locale}/projects?category=${category.slug}`}>{category.translation?.name}</Link>)}
+      </nav>
+      {entities.projects.length ? <div className="project-grid">{entities.projects.map((project) => <Link className="project-card" href={`/${locale}/projects/${project.slug}`} key={project.id}>
+        {project.coverMedia ? <PublicImage asset={project.coverMedia} locale={locale} /> : <div className="project-art" aria-hidden="true" />}
+        <div><h3>{project.translation?.title}</h3><p>{project.translation?.summary}</p></div>
+      </Link>)}</div> : <div className="premium-card"><p>{locale === 'ar' ? 'لا توجد مشاريع منشورة ضمن هذا التصنيف حالياً.' : 'No published projects are currently available in this filter.'}</p></div>}
     </div></section>;
   }
 
@@ -155,8 +187,9 @@ export function SectionRenderer({ section, locale, entities }: { section: Sectio
   }
 
   if (section.sectionType === 'contactForm') {
+    if (!contactFormEnabled) return null;
     return <section className="public-section contact-form-section"><div className="container-shell narrow"><Heading title={copy?.title} body={copy?.body} />
-      <ContactForm locale={locale} services={entities.services.map((service) => ({ id: service.id, name: service.translation?.name || service.slug }))} />
+      <ContactForm locale={locale} services={entities.services.map((service) => ({ id: service.id, name: service.translation?.name || service.slug }))} turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} />
     </div></section>;
   }
 
