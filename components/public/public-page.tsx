@@ -29,7 +29,7 @@ export function PublicPage({
     {breadcrumbs.length ? <JsonLd data={breadcrumbStructuredData(baseUrl, locale, breadcrumbs)} /> : null}
     <SiteHeader data={chrome} />
     {breadcrumbs.length ? <Breadcrumbs locale={locale} items={breadcrumbs} /> : null}
-    <main>
+    <main id="main-content">
       {page.sections.map((section) => <SectionRenderer key={section.id} section={section} locale={locale} entities={entities} contactFormEnabled={chrome.settings?.contactFormEnabled ?? false} contactFormNotice={locale === 'ar' ? chrome.settings?.inquiryFormNoticeAr : chrome.settings?.inquiryFormNoticeEn} />)}
     </main>
     <SiteFooter data={chrome} />
