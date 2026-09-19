@@ -6,6 +6,8 @@ import { PublicImage } from '@/components/public/media';
 import { buildProjectMetadata } from '@/lib/seo';
 import { getProject, getSiteChrome } from '@/lib/public-site';
 import { isLocale } from '@/lib/i18n';
+import { JsonLd, breadcrumbStructuredData, siteStructuredData } from '@/components/public/json-ld';
+import { env } from '@/lib/env';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug } = await params;
@@ -18,9 +20,13 @@ export default async function ProjectDetail({ params }: { params: Promise<{ loca
   if (!isLocale(locale)) notFound();
   const [project, chrome] = await Promise.all([getProject(slug, locale), getSiteChrome(locale)]);
   if (!project) notFound();
+  const breadcrumbs = [{ label: locale === 'ar' ? 'المشاريع' : 'Projects', href: `/${locale}/projects` }, { label: project.translation?.title || project.slug }];
+  const baseUrl = chrome.settings?.websiteUrl || env.APP_URL;
   return <>
+    <JsonLd data={siteStructuredData({ baseUrl, brandEnglish: chrome.settings?.brandNameEnglish, brandArabic: chrome.settings?.brandNameArabic, logoUrl: chrome.settings?.primaryLogo?.publicUrl })} />
+    <JsonLd data={breadcrumbStructuredData(baseUrl, locale, breadcrumbs)} />
     <SiteHeader data={chrome} />
-    <Breadcrumbs locale={locale} items={[{ label: locale === 'ar' ? 'المشاريع' : 'Projects', href: `/${locale}/projects` }, { label: project.translation?.title || project.slug }]} />
+    <Breadcrumbs locale={locale} items={breadcrumbs} />
     <main>
       <section className="detail-hero"><div className="container-shell detail-hero__grid"><div>
         {project.categoryTranslation?.name ? <p className="eyebrow">{project.categoryTranslation.name}</p> : null}

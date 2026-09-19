@@ -2,6 +2,8 @@ import type { Locale } from '@/lib/i18n';
 import type { getPublicEntities, getPublicPage, getSiteChrome } from '@/lib/public-site';
 import { Breadcrumbs, SiteFooter, SiteHeader } from '@/components/public/site-shell';
 import { SectionRenderer } from '@/components/public/section-renderer';
+import { JsonLd, breadcrumbStructuredData, siteStructuredData } from '@/components/public/json-ld';
+import { env } from '@/lib/env';
 
 export function PublicPage({
   locale,
@@ -16,7 +18,15 @@ export function PublicPage({
   chrome: Awaited<ReturnType<typeof getSiteChrome>>;
   breadcrumbs?: Array<{ label: string; href?: string }>;
 }) {
+  const baseUrl = chrome.settings?.websiteUrl || env.APP_URL;
   return <>
+    <JsonLd data={siteStructuredData({
+      baseUrl,
+      brandEnglish: chrome.settings?.brandNameEnglish,
+      brandArabic: chrome.settings?.brandNameArabic,
+      logoUrl: chrome.settings?.primaryLogo?.publicUrl
+    })} />
+    {breadcrumbs.length ? <JsonLd data={breadcrumbStructuredData(baseUrl, locale, breadcrumbs)} /> : null}
     <SiteHeader data={chrome} />
     {breadcrumbs.length ? <Breadcrumbs locale={locale} items={breadcrumbs} /> : null}
     <main>

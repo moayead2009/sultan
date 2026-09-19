@@ -6,6 +6,8 @@ import { PublicImage } from '@/components/public/media';
 import { buildServiceMetadata } from '@/lib/seo';
 import { getService, getSiteChrome } from '@/lib/public-site';
 import { isLocale } from '@/lib/i18n';
+import { JsonLd, breadcrumbStructuredData, serviceStructuredData, siteStructuredData } from '@/components/public/json-ld';
+import { env } from '@/lib/env';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug } = await params;
@@ -18,12 +20,26 @@ export default async function ServiceDetail({ params }: { params: Promise<{ loca
   if (!isLocale(locale)) notFound();
   const [service, chrome] = await Promise.all([getService(slug, locale), getSiteChrome(locale)]);
   if (!service) notFound();
+  const breadcrumbs = [
+    { label: locale === 'ar' ? 'الخدمات' : 'Services', href: `/${locale}/services` },
+    { label: service.translation?.name || service.slug }
+  ];
+  const baseUrl = chrome.settings?.websiteUrl || env.APP_URL;
   return <>
+    <JsonLd data={siteStructuredData({ baseUrl, brandEnglish: chrome.settings?.brandNameEnglish, brandArabic: chrome.settings?.brandNameArabic, logoUrl: chrome.settings?.primaryLogo?.publicUrl })} />
+    <JsonLd data={breadcrumbStructuredData(baseUrl, locale, breadcrumbs)} />
+    <JsonLd data={serviceStructuredData({
+      baseUrl,
+      locale,
+      slug: service.slug,
+      name: service.translation?.name || service.slug,
+      description: service.translation?.shortDescription,
+      providerName: chrome.settings?.brandNameEnglish || 'Solutions Gate',
+      providerArabic: chrome.settings?.brandNameArabic,
+      imageUrl: service.coverMedia?.publicUrl
+    })} />
     <SiteHeader data={chrome} />
-    <Breadcrumbs locale={locale} items={[
-      { label: locale === 'ar' ? 'الخدمات' : 'Services', href: `/${locale}/services` },
-      { label: service.translation?.name || service.slug }
-    ]} />
+    <Breadcrumbs locale={locale} items={breadcrumbs} />
     <main>
       <section className="detail-hero"><div className="container-shell detail-hero__grid"><div>
         <p className="eyebrow">{service.categoryTranslation?.name}</p>
