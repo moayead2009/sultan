@@ -47,12 +47,6 @@ export async function saveServiceCategory(formData: FormData) {
   await auditAdmin(rowId ? 'UPDATE' : 'CREATE', 'ServiceCategory', row.id);
   revalidatePath('/admin/service-categories');
   revalidatePath('/admin/services');
-  if (previousSlug && previousSlug !== row.slug) {
-    revalidatePath('/en/services/' + previousSlug);
-    revalidatePath('/ar/services/' + previousSlug);
-  }
-  revalidatePath('/en/services/' + row.slug);
-  revalidatePath('/ar/services/' + row.slug);
 }
 
 export async function saveService(formData: FormData) {
@@ -132,6 +126,12 @@ export async function saveService(formData: FormData) {
   });
   await auditAdmin(rowId ? 'UPDATE' : 'CREATE', 'Service', row.id, { status });
   revalidatePath('/admin/services');
+  if (previousSlug && previousSlug !== row.slug) {
+    revalidatePath('/en/services/' + previousSlug);
+    revalidatePath('/ar/services/' + previousSlug);
+  }
+  revalidatePath('/en/services/' + row.slug);
+  revalidatePath('/ar/services/' + row.slug);
 }
 
 export async function setServiceStatus(formData: FormData) {
