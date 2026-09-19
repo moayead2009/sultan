@@ -22,7 +22,7 @@ export function localizedUrls(baseUrl: string, slug: string, locale: Locale, def
 }
 
 async function metadataCore(ownerType: string, ownerId: string, routeSlug: string, locale: Locale, fallbackTitle: string, fallbackDescription?: string | null) {
-  const settings = await db.siteSettings.findUnique({ where: { id: 'site' } });
+  const settings = await db.siteSettings.findUnique({ where: { id: 'site' }, include: { defaultOgImage: true } });
   const seo = await db.seoMetadata.findUnique({
     where: { ownerType_ownerId_locale: { ownerType, ownerId, locale } },
     include: { ogImage: true }
@@ -33,6 +33,10 @@ async function metadataCore(ownerType: string, ownerId: string, routeSlug: strin
   const title = seo?.title || fallbackTitle;
   const description = seo?.description || fallbackDescription || undefined;
   const robots = seo?.robots || 'index,follow';
+  const ogImage = seo?.ogImage || settings?.defaultOgImage;
+  const ogImageUrl = ogImage
+    ? (ogImage.publicUrl.startsWith('http') ? ogImage.publicUrl : new URL(ogImage.publicUrl, baseUrl).toString())
+    : undefined;
   return {
     title,
     description,
@@ -42,7 +46,7 @@ async function metadataCore(ownerType: string, ownerId: string, routeSlug: strin
       title: seo?.ogTitle || title,
       description: seo?.ogDescription || description,
       url: seo?.canonicalOverride || alternates.canonical,
-      images: seo?.ogImage ? [{ url: seo.ogImage.publicUrl, width: seo.ogImage.width || undefined, height: seo.ogImage.height || undefined }] : undefined
+      images: ogImage && ogImageUrl ? [{ url: ogImageUrl, width: ogImage.width || undefined, height: ogImage.height || undefined }] : undefined
     }
   } satisfies Metadata;
 }
