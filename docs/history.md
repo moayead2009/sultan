@@ -25,3 +25,16 @@
 - Upgraded the App Router foundation from unsupported Next.js 14 to supported Next.js 16 Active LTS and migrated async request APIs/proxy/ESLint configuration.
 - Committed the npm lockfile and changed CI to a clean npm-ci + fresh migration/seed + lint/typecheck/test/build pipeline.
 - Added focused Phase 1 remediation tests for authorization boundaries, authentication URL/session safety, publication completeness, media protection, navigation validation and localization/SEO primitives.
+
+
+## 2026-09-19 — Phase 2 public website and business CMS
+
+- Replaced the public foundation placeholder with CMS-driven bilingual English/Arabic routes for Home, About, Services, Projects, Capabilities, Clients and Contact, plus service/project detail routes, breadcrumbs, equivalent-page language switching, responsive navigation/footer, localized metadata and localized 404 behavior.
+- Added the premium public presentation layer using the profile-derived purple/gold/turquoise visual direction, event-production geometry, responsive cards, process presentation, project galleries, capability comparison and true RTL layouts.
+- Added canonical service hierarchy, service gallery and related-service relationships with a real Prisma migration.
+- Populated source-supported company copy, service categories/services, exact five-stage work cycle, executive message, profile contact people and verified capability values in separately authored English/Arabic CMS records.
+- Kept project records empty until names/details are verified, kept client identities gated behind identity/public-display approval, kept source metrics disabled pending currentness confirmation, and kept the unresolved English premium-tier package disabled behind the owner-label gate.
+- Completed Phase 2 CMS surfaces for Homepage/About, Pages/Sections, Services/categories/features/sub-services/galleries/related services, Projects/categories/galleries/related services, Clients, Capabilities, Metrics, Work Cycle, Leadership, Contact People/info, Inquiries, Navigation/Footer, Branding/logos/favicon, Media, Buttons/CTAs, SEO, Redirects and global settings.
+- Added authenticated draft previews for Pages, Services and Projects.
+- Implemented persisted contact inquiries with client/server validation, sanitization, honeypot, rate limiting, optional Turnstile, optional Resend notification after persistence, inquiry status management and configurable factual form notices.
+- Added source-gate and inquiry-persistence regression tests for Phase 2.
