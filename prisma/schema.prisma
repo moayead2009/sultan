@@ -60,8 +60,21 @@ model User {
   updatedAt    DateTime    @updatedAt
   uploadedMedia MediaAsset[]
   auditLogs    AuditLog[]
+  authSessions AuthSession[]
 
   @@index([status, email])
+}
+
+model AuthSession {
+  id         String    @id @default(cuid())
+  userId     String
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt, expiresAt])
 }
 
 model SiteSettings {
@@ -95,6 +108,10 @@ model SiteSettings {
   inquiryFormNoticeAr   String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+  primaryLogo           MediaAsset? @relation("SitePrimaryLogo", fields: [primaryLogoId], references: [id], onDelete: Restrict)
+  alternateLogo         MediaAsset? @relation("SiteAlternateLogo", fields: [alternateLogoId], references: [id], onDelete: Restrict)
+  favicon               MediaAsset? @relation("SiteFavicon", fields: [faviconId], references: [id], onDelete: Restrict)
+  defaultOgImage        MediaAsset? @relation("SiteDefaultOgImage", fields: [defaultOgImageId], references: [id], onDelete: Restrict)
 }
 
 model SocialLink {
@@ -117,8 +134,10 @@ model Page {
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt
   translations    PageTranslation[]
-  sections        PageSection[]
-  navigationItems NavigationItem[]
+  sections             PageSection[]
+  navigationItems      NavigationItem[]
+  primaryCtaSections   PageSection[] @relation("PageSectionPrimaryCta")
+  secondaryCtaSections PageSection[] @relation("PageSectionSecondaryCta")
 }
 
 model PageTranslation {
@@ -156,6 +175,10 @@ model PageSection {
   createdAt             DateTime                 @default(now())
   updatedAt             DateTime                 @updatedAt
   page                  Page                     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  primaryMedia          MediaAsset?              @relation("PageSectionPrimaryMedia", fields: [primaryMediaId], references: [id], onDelete: Restrict)
+  secondaryMedia        MediaAsset?              @relation("PageSectionSecondaryMedia", fields: [secondaryMediaId], references: [id], onDelete: Restrict)
+  primaryCtaPage        Page?                    @relation("PageSectionPrimaryCta", fields: [primaryCtaPageId], references: [id], onDelete: SetNull)
+  secondaryCtaPage      Page?                    @relation("PageSectionSecondaryCta", fields: [secondaryCtaPageId], references: [id], onDelete: SetNull)
   translations          PageSectionTranslation[]
   media                 PageSectionMedia[]
 
@@ -207,7 +230,7 @@ model NavigationItem {
   sortOrder      Int                         @default(0)
   enabled        Boolean                     @default(true)
   menu           NavigationMenu              @relation(fields: [menuId], references: [id], onDelete: Cascade)
-  parent         NavigationItem?             @relation("NavigationTree", fields: [parentId], references: [id], onDelete: Cascade)
+  parent         NavigationItem?             @relation("NavigationTree", fields: [parentId], references: [id], onDelete: Restrict)
   children       NavigationItem[]            @relation("NavigationTree")
   internalPage   Page?                       @relation(fields: [internalPageId], references: [id], onDelete: SetNull)
   translations   NavigationItemTranslation[]
@@ -260,6 +283,8 @@ model Service {
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
   category      ServiceCategory      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  iconMedia     MediaAsset?           @relation("ServiceIcon", fields: [iconMediaId], references: [id], onDelete: Restrict)
+  coverMedia    MediaAsset?           @relation("ServiceCover", fields: [coverMediaId], references: [id], onDelete: Restrict)
   translations  ServiceTranslation[]
   features      ServiceFeature[]
   projects      ProjectService[]
@@ -339,6 +364,8 @@ model Project {
   updatedAt       DateTime             @updatedAt
   category        ProjectCategory?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   client          Client?              @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  coverMedia      MediaAsset?          @relation("ProjectCover", fields: [coverMediaId], references: [id], onDelete: Restrict)
+  videoMedia      MediaAsset?          @relation("ProjectVideo", fields: [videoMediaId], references: [id], onDelete: Restrict)
   translations    ProjectTranslation[]
   media           ProjectMedia[]
   services        ProjectService[]
@@ -395,6 +422,7 @@ model Client {
   publicDisplayApproved Boolean             @default(false)
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
+  logo                  MediaAsset?          @relation("ClientLogo", fields: [logoId], references: [id], onDelete: Restrict)
   translations          ClientTranslation[]
   projects              Project[]
 
@@ -421,6 +449,8 @@ model ProcessStep {
   link         String?
   sortOrder    Int                      @default(0)
   enabled      Boolean                  @default(true)
+  iconMedia    MediaAsset?               @relation("ProcessStepIcon", fields: [iconMediaId], references: [id], onDelete: Restrict)
+  imageMedia   MediaAsset?               @relation("ProcessStepImage", fields: [imageMediaId], references: [id], onDelete: Restrict)
   translations ProcessStepTranslation[]
 }
 
@@ -444,6 +474,7 @@ model Metric {
   enabled         Boolean             @default(false)
   sourceNote      String
   lastConfirmedAt DateTime?
+  iconMedia        MediaAsset?           @relation("MetricIcon", fields: [iconMediaId], references: [id], onDelete: Restrict)
   translations    MetricTranslation[]
 }
 
@@ -528,6 +559,7 @@ model LeadershipMember {
   imageId      String?
   sortOrder    Int                           @default(0)
   status       PublishStatus                 @default(DRAFT)
+  image        MediaAsset?                   @relation("LeadershipImage", fields: [imageId], references: [id], onDelete: Restrict)
   translations LeadershipMemberTranslation[]
 }
 
@@ -551,6 +583,7 @@ model ContactPerson {
   imageId      String?
   sortOrder    Int                        @default(0)
   enabled      Boolean                    @default(true)
+  image        MediaAsset?                 @relation("ContactPersonImage", fields: [imageId], references: [id], onDelete: Restrict)
   translations ContactPersonTranslation[]
 }
 
@@ -583,7 +616,24 @@ model MediaAsset {
   translations     MediaAssetTranslation[]
   usages           MediaUsage[]
   pageSections     PageSectionMedia[]
-  projectMedia     ProjectMedia[]
+  projectMedia             ProjectMedia[]
+  sitePrimaryLogos          SiteSettings[]    @relation("SitePrimaryLogo")
+  siteAlternateLogos        SiteSettings[]    @relation("SiteAlternateLogo")
+  siteFavicons              SiteSettings[]    @relation("SiteFavicon")
+  siteDefaultOgImages       SiteSettings[]    @relation("SiteDefaultOgImage")
+  sectionPrimaryMedia       PageSection[]     @relation("PageSectionPrimaryMedia")
+  sectionSecondaryMedia     PageSection[]     @relation("PageSectionSecondaryMedia")
+  serviceIcons              Service[]         @relation("ServiceIcon")
+  serviceCovers             Service[]         @relation("ServiceCover")
+  projectCovers             Project[]         @relation("ProjectCover")
+  projectVideos             Project[]         @relation("ProjectVideo")
+  clientLogos               Client[]          @relation("ClientLogo")
+  processStepIcons          ProcessStep[]     @relation("ProcessStepIcon")
+  processStepImages         ProcessStep[]     @relation("ProcessStepImage")
+  metricIcons               Metric[]          @relation("MetricIcon")
+  leadershipImages          LeadershipMember[] @relation("LeadershipImage")
+  contactPersonImages       ContactPerson[]   @relation("ContactPersonImage")
+  seoImages                 SeoMetadata[]     @relation("SeoOgImage")
 
   @@index([kind, createdAt])
 }
@@ -627,6 +677,7 @@ model SeoMetadata {
   ogDescription     String?
   ogImageId         String?
   updatedAt         DateTime @updatedAt
+  ogImage           MediaAsset? @relation("SeoOgImage", fields: [ogImageId], references: [id], onDelete: Restrict)
 
   @@unique([ownerType, ownerId, locale])
 }
