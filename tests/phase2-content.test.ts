@@ -29,6 +29,49 @@ describe('Phase 2 source-supported public content gates', () => {
     }
   });
 
+  it('wires approved profile imagery through Media/CMS relations without exposing gated client or project assets', async () => {
+    const [settings, home, entities, sourceAssets, publishedUsages] = await Promise.all([
+      db.siteSettings.findUniqueOrThrow({
+        where: { id: 'site' },
+        include: { primaryLogo: true, favicon: true, defaultOgImage: true }
+      }),
+      getPublicPage('home', 'en'),
+      getPublicEntities('en'),
+      db.mediaAsset.findMany({ where: { storageKey: { startsWith: 'source-profile/' } } }),
+      db.mediaUsage.count({ where: { isPublishedReference: true, mediaAsset: { storageKey: { startsWith: 'source-profile/' } } } })
+    ]);
+
+    expect(sourceAssets).toHaveLength(10);
+    expect(settings.primaryLogo?.publicUrl).toBe('/uploads/source-profile/logo-mark.webp');
+    expect(settings.favicon?.publicUrl).toBe('/uploads/source-profile/logo-mark.webp');
+    expect(settings.defaultOgImage?.publicUrl).toBe('/uploads/source-profile/event-hero.avif');
+
+    const hero = home?.sections.find((section) => section.key === 'hero');
+    const technology = home?.sections.find((section) => section.key === 'visual-future');
+    expect(hero?.primaryMedia?.publicUrl).toBe('/uploads/source-profile/event-hero.avif');
+    expect(technology?.primaryMedia?.publicUrl).toBe('/uploads/source-profile/technology-immersive.avif');
+
+    expect(entities.services).toHaveLength(9);
+    expect(entities.services.every((service) => service.coverMedia?.publicUrl.startsWith('/uploads/source-profile/'))).toBe(true);
+    expect(entities.leadership[0]?.image?.publicUrl).toBe('/uploads/source-profile/leadership-sultan.avif');
+    expect(publishedUsages).toBeGreaterThanOrEqual(20);
+
+    expect(entities.clients).toHaveLength(0);
+    expect(entities.projects).toHaveLength(0);
+  });
+
+  it('supports both English and Arabic source-backed preview entity data', async () => {
+    const { getService } = await import('@/lib/public-site');
+    const [en, ar] = await Promise.all([
+      getService('theater-engineering-construction', 'en', true),
+      getService('theater-engineering-construction', 'ar', true)
+    ]);
+    expect(en?.translation?.name).toBe('Theater Engineering and Construction');
+    expect(ar?.translation?.name).toBe('هندسة وإنشاء المسارح');
+    expect(en?.coverMedia?.publicUrl).toBe('/uploads/source-profile/theater-stage.avif');
+    expect(ar?.coverMedia?.publicUrl).toBe('/uploads/source-profile/theater-stage.avif');
+  });
+
   it('keeps unconfirmed metrics, clients and unresolved capability labels off the public surface', async () => {
     const entities = await getPublicEntities('en');
 
