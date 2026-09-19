@@ -6,7 +6,7 @@ import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/authorization';
 import { auditAdmin } from '@/lib/admin-audit';
 import { checkbox, integer, optionalText } from '@/lib/admin-input';
-import { isSafeHttpOrRelativeUrl } from '@/lib/security-url';
+import { isSafeHttpOrRelativeUrl, isSafeHttpUrl } from '@/lib/security-url';
 import { replaceMediaUsage } from '@/lib/media-usage';
 
 export async function updateSiteSettings(formData: FormData) {
@@ -67,7 +67,8 @@ export async function updateSiteSettings(formData: FormData) {
 export async function saveSocialLink(formData: FormData) {
   await requireAdmin();
   const rowId = optionalText(formData.get('id'));
-  const url = z.string().url().parse(formData.get('url'));
+  const url = z.string().trim().min(1).parse(formData.get('url'));
+  if (!isSafeHttpUrl(url)) throw new Error('Social URL must be HTTP(S).');
   const data = {
     platform: z.string().trim().min(1).max(80).parse(formData.get('platform')),
     url,
