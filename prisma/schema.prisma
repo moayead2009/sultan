@@ -282,11 +282,17 @@ model Service {
   publishedAt   DateTime?
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
+  parentServiceId String?
   category      ServiceCategory      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  parentService Service?              @relation("ServiceHierarchy", fields: [parentServiceId], references: [id], onDelete: SetNull)
+  childServices Service[]             @relation("ServiceHierarchy")
   iconMedia     MediaAsset?           @relation("ServiceIcon", fields: [iconMediaId], references: [id], onDelete: Restrict)
   coverMedia    MediaAsset?           @relation("ServiceCover", fields: [coverMediaId], references: [id], onDelete: Restrict)
   translations  ServiceTranslation[]
   features      ServiceFeature[]
+  media         ServiceMedia[]
+  relatedFrom   ServiceRelation[]     @relation("ServiceRelationFrom")
+  relatedTo     ServiceRelation[]     @relation("ServiceRelationTo")
   projects      ProjectService[]
   submissions   ContactSubmission[]
 
@@ -304,6 +310,31 @@ model ServiceTranslation {
   service          Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
   @@unique([serviceId, locale])
+}
+
+model ServiceMedia {
+  id        String     @id @default(cuid())
+  serviceId String
+  mediaId   String
+  role      String
+  sortOrder Int        @default(0)
+  service   Service    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  media     MediaAsset @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
+  @@unique([serviceId, mediaId, role])
+  @@index([mediaId])
+  @@index([serviceId, sortOrder])
+}
+
+model ServiceRelation {
+  sourceServiceId String
+  targetServiceId String
+  sortOrder       Int     @default(0)
+  sourceService   Service @relation("ServiceRelationFrom", fields: [sourceServiceId], references: [id], onDelete: Cascade)
+  targetService   Service @relation("ServiceRelationTo", fields: [targetServiceId], references: [id], onDelete: Cascade)
+
+  @@id([sourceServiceId, targetServiceId])
+  @@index([targetServiceId])
 }
 
 model ServiceFeature {
@@ -625,6 +656,7 @@ model MediaAsset {
   sectionSecondaryMedia     PageSection[]     @relation("PageSectionSecondaryMedia")
   serviceIcons              Service[]         @relation("ServiceIcon")
   serviceCovers             Service[]         @relation("ServiceCover")
+  serviceMedia              ServiceMedia[]
   projectCovers             Project[]         @relation("ProjectCover")
   projectVideos             Project[]         @relation("ProjectVideo")
   clientLogos               Client[]          @relation("ClientLogo")
