@@ -19,10 +19,85 @@ const inquirySchema = z.object({
 
 const plain = (value: string) => sanitizeHtml(value, { allowedTags: [], allowedAttributes: {} }).trim();
 
+async function notifyInquiry(
+  submission: {
+    id: string;
+    name: string;
+    email: string;
+    organization: string | null;
+    phone: string | null;
+    subject: string | null;
+    message: string;
+  },
+  recipient: string | null
+) {
+  if (env.MAIL_PROVIDER !== 'resend' || !env.RESEND_API_KEY || !env.MAIL_FROM || !recipient) {
+    await db.contactSubmission.update({
+      where: { id: submission.id },
+      data: { notificationStatus: 'NOT_CONFIGURED' }
+    });
+    return;
+  }
+
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        authorization: 'Bearer ' + env.RESEND_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: env.MAIL_FROM,
+        to: [recipient],
+        reply_to: submission.email,
+        subject: submission.subject || 'New website inquiry',
+        text: [
+          'New website inquiry',
+          'Name: ' + submission.name,
+          submission.organization ? 'Organization: ' + submission.organization : '',
+          'Email: ' + submission.email,
+          submission.phone ? 'Phone: ' + submission.phone : '',
+          '',
+          submission.message
+        ].filter(Boolean).join('\n')
+      })
+    });
+
+    await db.contactSubmission.update({
+      where: { id: submission.id },
+      data: { notificationStatus: response.ok ? 'SENT' : 'FAILED' }
+    });
+    if (!response.ok) {
+      logger.warn('inquiry.notification_failed', { submissionId: submission.id, status: response.status });
+    }
+  } catch (error) {
+    await db.contactSubmission.update({
+      where: { id: submission.id },
+      data: { notificationStatus: 'FAILED' }
+    }).catch(() => undefined);
+    logger.warn('inquiry.notification_failed', {
+      submissionId: submission.id,
+      error: error instanceof Error ? error.message : 'unknown'
+    });
+  }
+}
+
 export async function persistInquiry(input: unknown) {
   const parsed = inquirySchema.parse(input);
-  const service = parsed.serviceId ? await db.service.findFirst({ where: { id: parsed.serviceId, status: 'PUBLISHED' }, select: { id: true } }) : null;
-  const retentionUntil = null;
+  const [service, settings] = await Promise.all([
+    parsed.serviceId
+      ? db.service.findFirst({ where: { id: parsed.serviceId, status: 'PUBLISHED' }, select: { id: true } })
+      : Promise.resolve(null),
+    db.siteSettings.findUnique({
+      where: { id: 'site' },
+      select: { inquiryRecipient: true, inquiryRetentionDays: true }
+    })
+  ]);
+
+  const retentionUntil = settings?.inquiryRetentionDays
+    ? new Date(Date.now() + settings.inquiryRetentionDays * 86_400_000)
+    : null;
+
   const submission = await db.contactSubmission.create({
     data: {
       name: plain(parsed.name),
@@ -34,20 +109,11 @@ export async function persistInquiry(input: unknown) {
       message: plain(parsed.message),
       locale: parsed.locale,
       consentJson: { responseUseAccepted: true },
-      notificationStatus: env.MAIL_PROVIDER === 'none' ? 'NOT_CONFIGURED' : 'PENDING',
+      notificationStatus: 'PENDING',
       retentionUntil
     }
   });
 
-  // Persistence intentionally happens before notification. No provider is fabricated:
-  // when a provider is not configured, the inquiry remains safely stored and visible in CMS.
-  if (env.MAIL_PROVIDER !== 'none') {
-    try {
-      logger.warn('inquiry.notification_provider_unimplemented', { submissionId: submission.id, provider: env.MAIL_PROVIDER });
-      await db.contactSubmission.update({ where: { id: submission.id }, data: { notificationStatus: 'FAILED' } });
-    } catch {
-      // Notification-state failure must never roll back a successfully persisted inquiry.
-    }
-  }
+  await notifyInquiry(submission, settings?.inquiryRecipient ?? null);
   return submission;
 }
