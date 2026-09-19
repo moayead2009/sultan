@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import type { Locale } from '@/lib/i18n';
 import { localized, navigationHref } from '@/lib/public-site';
@@ -13,7 +14,7 @@ export function SiteHeader({ data }: { data: Awaited<ReturnType<typeof getSiteCh
     <header className="site-header">
       <div className="container-shell site-header__inner">
         <Link className="brand-lockup" href={`/${locale}`} aria-label={brand}>
-          {settings?.primaryLogo ? <img src={settings.primaryLogo.publicUrl} alt="" className="brand-lockup__logo" /> : <span className="brand-mark" aria-hidden="true">SG</span>}
+          {settings?.primaryLogo ? <Image src={settings.primaryLogo.publicUrl} alt="" width={48} height={48} sizes="48px" className="brand-lockup__logo" /> : <span className="brand-mark" aria-hidden="true">SG</span>}
           <span>{brand}</span>
         </Link>
         <nav className="desktop-nav" aria-label={locale === 'ar' ? 'التنقل الرئيسي' : 'Main navigation'}>
@@ -55,7 +56,7 @@ export function SiteFooter({ data }: { data: Awaited<ReturnType<typeof getSiteCh
     <footer className="site-footer">
       <div className="container-shell footer-grid">
         <div>
-          <div className="brand-lockup footer-brand">{footerLogo ? <img src={footerLogo.publicUrl} alt="" className="brand-lockup__logo footer-logo" /> : <span className="brand-mark" aria-hidden="true">SG</span>}<strong>{brand}</strong></div>
+          <div className="brand-lockup footer-brand">{footerLogo ? <Image src={footerLogo.publicUrl} alt="" width={48} height={48} sizes="48px" className="brand-lockup__logo footer-logo" /> : <span className="brand-mark" aria-hidden="true">SG</span>}<strong>{brand}</strong></div>
           {settings?.websiteUrl ? <p className="muted">{settings.websiteUrl.replace(/^https?:\/\//, '')}</p> : null}
         </div>
         <nav aria-label={locale === 'ar' ? 'روابط التذييل' : 'Footer links'}>
