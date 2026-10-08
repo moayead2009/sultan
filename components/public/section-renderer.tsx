@@ -8,6 +8,7 @@ import { ContactForm } from '@/components/public/contact-form';
 type PublicPage = NonNullable<Awaited<ReturnType<typeof getPublicPage>>>;
 type Section = PublicPage['sections'][number];
 type Entities = Awaited<ReturnType<typeof getPublicEntities>>;
+type Project = Entities['projects'][number];
 
 function copyFor(section: Section, locale: Locale) {
   return localized(section.translations, locale);
@@ -26,6 +27,23 @@ function Heading({ title, eyebrow, body }: { title?: string | null; eyebrow?: st
     {title ? <h2>{title}</h2> : null}
     {body ? <p>{body}</p> : null}
   </div>;
+}
+
+function ProjectCard({ project, locale, priority = false }: { project: Project; locale: Locale; priority?: boolean }) {
+  const category = project.categoryTranslation?.name;
+  const viewLabel = locale === 'ar' ? 'عرض المشروع' : 'View project';
+  return <Link className="project-card portfolio-card" href={`/${locale}/projects/${project.slug}`}>
+    <div className="project-card__media">
+      {project.coverMedia ? <PublicImage asset={project.coverMedia} locale={locale} sizes="(max-width: 760px) 100vw, (max-width: 1180px) 50vw, 40vw" eager={priority} /> : <div className="project-art" aria-hidden="true" />}
+      <span className="project-card__veil" aria-hidden="true" />
+    </div>
+    <div className="project-card__content">
+      {(category || project.year) ? <div className="project-card__meta">{category ? <span>{category}</span> : null}{project.year ? <span dir="ltr">{project.year}</span> : null}</div> : null}
+      <h3>{project.translation?.title}</h3>
+      {project.translation?.summary ? <p>{project.translation.summary}</p> : null}
+      <span className="project-card__link">{viewLabel}<b aria-hidden="true">↗</b></span>
+    </div>
+  </Link>;
 }
 
 export function CapabilityMatrix({ locale, entities }: { locale: Locale; entities: Entities }) {
@@ -61,7 +79,7 @@ export function CapabilityMatrix({ locale, entities }: { locale: Locale; entitie
   </div>;
 }
 
-export function SectionRenderer({ section, locale, entities, contactFormEnabled = true, contactFormNotice }: { section: Section; locale: Locale; entities: Entities; contactFormEnabled?: boolean; contactFormNotice?: string | null }) {
+export function SectionRenderer({ section, locale, entities, activeProjectCategory, contactFormEnabled = true, contactFormNotice }: { section: Section; locale: Locale; entities: Entities; activeProjectCategory?: string; contactFormEnabled?: boolean; contactFormNotice?: string | null }) {
   const copy = copyFor(section, locale);
   const primaryHref = ctaHref(section, locale, true);
   const secondaryHref = ctaHref(section, locale, false);
@@ -137,24 +155,25 @@ export function SectionRenderer({ section, locale, entities, contactFormEnabled 
     const max = typeof settings.maxItems === 'number' ? settings.maxItems : 4;
     const projects = entities.projects.filter((item) => item.featured).slice(0, max);
     if (!projects.length) return null;
-    return <section className="public-section"><div className="container-shell"><Heading title={copy?.title} body={copy?.body} />
-      <div className="project-grid">{projects.map((project) => <Link className="project-card" href={`/${locale}/projects/${project.slug}`} key={project.id}>
-        {project.coverMedia ? <PublicImage asset={project.coverMedia} locale={locale} /> : <div className="project-art" aria-hidden="true" />}
-        <div><h3>{project.translation?.title}</h3><p>{project.translation?.summary}</p></div>
-      </Link>)}</div>
+    return <section className="public-section portfolio-section"><div className="container-shell"><Heading title={copy?.title} body={copy?.body} />
+      <div className="project-grid portfolio-grid">{projects.map((project, index) => <ProjectCard key={project.id} project={project} locale={locale} priority={index === 0} />)}</div>
     </div></section>;
   }
 
   if (section.sectionType === 'projectIndex') {
-    return <section className="public-section"><div className="container-shell"><Heading title={copy?.title} body={copy?.body} />
+    const activeCategory = activeProjectCategory?.trim();
+    const projects = activeCategory ? entities.projects.filter((project) => project.category?.slug === activeCategory) : entities.projects;
+    const allLabel = locale === 'ar' ? 'الكل' : 'All';
+    return <section className="public-section portfolio-index-section"><div className="container-shell"><Heading title={copy?.title} body={copy?.body} />
       <nav className="project-filters" aria-label={locale === 'ar' ? 'تصفية المشاريع' : 'Project filters'}>
-        <Link href={`/${locale}/projects`}>{locale === 'ar' ? 'الكل' : 'All'}</Link>
-        {entities.projectCategories.map((category) => <Link key={category.id} href={`/${locale}/projects?category=${category.slug}`}>{category.translation?.name}</Link>)}
+        <Link className={!activeCategory ? 'is-active' : undefined} aria-current={!activeCategory ? 'page' : undefined} href={`/${locale}/projects`}><span>{allLabel}</span><small>{entities.projects.length}</small></Link>
+        {entities.projectCategories.map((category) => {
+          const count = entities.projects.filter((project) => project.category?.slug === category.slug).length;
+          const active = activeCategory === category.slug;
+          return <Link className={active ? 'is-active' : undefined} aria-current={active ? 'page' : undefined} key={category.id} href={`/${locale}/projects?category=${category.slug}`}><span>{category.translation?.name}</span><small>{count}</small></Link>;
+        })}
       </nav>
-      {entities.projects.length ? <div className="project-grid">{entities.projects.map((project) => <Link className="project-card" href={`/${locale}/projects/${project.slug}`} key={project.id}>
-        {project.coverMedia ? <PublicImage asset={project.coverMedia} locale={locale} /> : <div className="project-art" aria-hidden="true" />}
-        <div><h3>{project.translation?.title}</h3><p>{project.translation?.summary}</p></div>
-      </Link>)}</div> : <div className="premium-card"><p>{locale === 'ar' ? 'لا توجد مشاريع منشورة ضمن هذا التصنيف حالياً.' : 'No published projects are currently available in this filter.'}</p></div>}
+      {projects.length ? <div className="project-grid portfolio-grid">{projects.map((project, index) => <ProjectCard key={project.id} project={project} locale={locale} priority={index < 2} />)}</div> : <div className="portfolio-empty"><span aria-hidden="true">◇</span><p>{locale === 'ar' ? 'لا توجد مشاريع منشورة ضمن هذا التصنيف حالياً.' : 'No published projects are currently available in this filter.'}</p></div>}
     </div></section>;
   }
 

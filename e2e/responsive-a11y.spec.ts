@@ -1,4 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { ensureE2EProject } from './helpers';
+
+test.beforeAll(async () => {
+  await ensureE2EProject();
+});
 
 const viewports = [
   { name: 'desktop', width: 1440, height: 900 },
@@ -10,7 +15,7 @@ for (const locale of ['en', 'ar'] as const) {
   for (const viewport of viewports) {
     test(locale + ' responsive ' + viewport.name + ' has no horizontal overflow', async ({ page }) => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
-      for (const route of ['', '/services', '/capabilities', '/contact']) {
+      for (const route of ['', '/services', '/projects', '/projects/phase3-e2e-project', '/capabilities', '/contact']) {
         await page.goto('/' + locale + route);
         const overflow = await page.evaluate(() => ({
           scrollWidth: document.documentElement.scrollWidth,

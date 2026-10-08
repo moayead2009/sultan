@@ -38,6 +38,24 @@ for (const locale of ['en', 'ar'] as const) {
     }
   });
 
+  test('project portfolio and case-study details render in ' + locale, async ({ page }) => {
+    await page.goto('/' + locale + '/projects');
+    await expect(page.locator('.portfolio-card')).toHaveCount(1);
+    const categoryLabel = locale === 'ar' ? 'فعاليات اختبار المتصفح' : 'Browser Test Events';
+    const categoryFilter = page.getByRole('link', { name: new RegExp(categoryLabel) });
+    await expect(categoryFilter).toBeVisible();
+    await categoryFilter.click();
+    await expect(page).toHaveURL(new RegExp('category=phase3-e2e-category'));
+    await expect(page.locator('.portfolio-card')).toHaveCount(1);
+
+    await page.locator('.portfolio-card').click();
+    await expect(page).toHaveURL(new RegExp('/' + locale + '/projects/phase3-e2e-project$'));
+    await expect(page.locator('.project-showcase-hero h1')).toContainText(locale === 'ar' ? 'مشروع اختبار المتصفح للمرحلة الثالثة' : 'Phase 3 Browser Test Project');
+    await expect(page.locator('.project-meta-band')).toContainText('2026');
+    await expect(page.locator('.project-meta-band')).toContainText('Riyadh');
+    await expect(page.locator('.project-gallery-item')).toHaveCount(1);
+  });
+
   test('major public pages have no serious axe violations in ' + locale, async ({ page }) => {
     for (const route of routes) {
       await page.goto('/' + locale + route);

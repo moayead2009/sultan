@@ -42,34 +42,44 @@ export async function ensureE2EUsers() {
 }
 
 export async function ensureE2EProject() {
-  const cover = await db.mediaAsset.findFirstOrThrow({
-    where: { storageKey: 'source-profile/theater-stage.avif' }
+  const [cover, gallery] = await Promise.all([
+    db.mediaAsset.findFirstOrThrow({ where: { storageKey: 'source-profile/theater-stage.avif' } }),
+    db.mediaAsset.findFirstOrThrow({ where: { storageKey: 'source-profile/theater-hall.avif' } })
+  ]);
+  const category = await db.projectCategory.upsert({
+    where: { slug: 'phase3-e2e-category' },
+    update: { enabled: true, sortOrder: 999 },
+    create: { slug: 'phase3-e2e-category', enabled: true, sortOrder: 999 }
+  });
+  await db.projectCategoryTranslation.upsert({
+    where: { categoryId_locale: { categoryId: category.id, locale: 'en' } },
+    update: { name: 'Browser Test Events' },
+    create: { categoryId: category.id, locale: 'en', name: 'Browser Test Events' }
+  });
+  await db.projectCategoryTranslation.upsert({
+    where: { categoryId_locale: { categoryId: category.id, locale: 'ar' } },
+    update: { name: 'فعاليات اختبار المتصفح' },
+    create: { categoryId: category.id, locale: 'ar', name: 'فعاليات اختبار المتصفح' }
   });
   const row = await db.project.upsert({
     where: { slug: 'phase3-e2e-project' },
-    update: {
-      coverMediaId: cover.id,
-      status: 'PUBLISHED',
-      publishedAt: new Date(),
-      featured: false
-    },
-    create: {
-      slug: 'phase3-e2e-project',
-      coverMediaId: cover.id,
-      status: 'PUBLISHED',
-      publishedAt: new Date(),
-      featured: false
-    }
+    update: { categoryId: category.id, coverMediaId: cover.id, location: 'Riyadh', year: 2026, status: 'PUBLISHED', publishedAt: new Date(), featured: false },
+    create: { slug: 'phase3-e2e-project', categoryId: category.id, coverMediaId: cover.id, location: 'Riyadh', year: 2026, status: 'PUBLISHED', publishedAt: new Date(), featured: false }
   });
   await db.projectTranslation.upsert({
     where: { projectId_locale: { projectId: row.id, locale: 'en' } },
-    update: { title: 'Phase 3 Browser Test Project', summary: 'Temporary browser-test project.' },
-    create: { projectId: row.id, locale: 'en', title: 'Phase 3 Browser Test Project', summary: 'Temporary browser-test project.' }
+    update: { title: 'Phase 3 Browser Test Project', summary: 'Temporary browser-test project.', detailedDescription: 'A temporary case-study description used to verify the public project experience.' },
+    create: { projectId: row.id, locale: 'en', title: 'Phase 3 Browser Test Project', summary: 'Temporary browser-test project.', detailedDescription: 'A temporary case-study description used to verify the public project experience.' }
   });
   await db.projectTranslation.upsert({
     where: { projectId_locale: { projectId: row.id, locale: 'ar' } },
-    update: { title: 'مشروع اختبار المتصفح للمرحلة الثالثة', summary: 'مشروع مؤقت لاختبارات المتصفح.' },
-    create: { projectId: row.id, locale: 'ar', title: 'مشروع اختبار المتصفح للمرحلة الثالثة', summary: 'مشروع مؤقت لاختبارات المتصفح.' }
+    update: { title: 'مشروع اختبار المتصفح للمرحلة الثالثة', summary: 'مشروع مؤقت لاختبارات المتصفح.', detailedDescription: 'وصف مؤقت لدراسة حالة يُستخدم للتحقق من تجربة عرض المشروع العامة.' },
+    create: { projectId: row.id, locale: 'ar', title: 'مشروع اختبار المتصفح للمرحلة الثالثة', summary: 'مشروع مؤقت لاختبارات المتصفح.', detailedDescription: 'وصف مؤقت لدراسة حالة يُستخدم للتحقق من تجربة عرض المشروع العامة.' }
+  });
+  await db.projectMedia.upsert({
+    where: { projectId_mediaId_role: { projectId: row.id, mediaId: gallery.id, role: 'gallery' } },
+    update: { sortOrder: 10 },
+    create: { projectId: row.id, mediaId: gallery.id, role: 'gallery', sortOrder: 10 }
   });
   return row;
 }
@@ -130,6 +140,7 @@ export async function ensureE2EPage() {
 export async function cleanupE2ERecords() {
   const project = await db.project.findUnique({ where: { slug: 'phase3-e2e-project' } });
   if (project) await db.project.delete({ where: { id: project.id } });
+  await db.projectCategory.deleteMany({ where: { slug: 'phase3-e2e-category' } });
 
   const page = await db.page.findUnique({ where: { slug: 'phase3-e2e-page' } });
   if (page) {
