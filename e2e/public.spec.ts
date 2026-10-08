@@ -18,7 +18,7 @@ const routes = [
   '/projects/phase3-e2e-project',
   '/capabilities',
   '/clients',
-  '/contact'
+  '/contact',
 ];
 
 for (const locale of ['en', 'ar'] as const) {
@@ -42,7 +42,9 @@ for (const locale of ['en', 'ar'] as const) {
     await page.goto('/' + locale + '/projects');
     await expect(page.locator('.portfolio-card')).toHaveCount(1);
     const categoryLabel = locale === 'ar' ? 'فعاليات اختبار المتصفح' : 'Browser Test Events';
-    const categoryFilter = page.getByRole('link', { name: new RegExp(categoryLabel) });
+    const categoryFilter = page
+      .locator('.project-filters')
+      .getByRole('link', { name: new RegExp(categoryLabel) });
     await expect(categoryFilter).toBeVisible();
     await categoryFilter.click();
     await expect(page).toHaveURL(new RegExp('category=phase3-e2e-category'));
@@ -50,7 +52,9 @@ for (const locale of ['en', 'ar'] as const) {
 
     await page.locator('.portfolio-card').click();
     await expect(page).toHaveURL(new RegExp('/' + locale + '/projects/phase3-e2e-project$'));
-    await expect(page.locator('.project-showcase-hero h1')).toContainText(locale === 'ar' ? 'مشروع اختبار المتصفح للمرحلة الثالثة' : 'Phase 3 Browser Test Project');
+    await expect(page.locator('.project-showcase-hero h1')).toContainText(
+      locale === 'ar' ? 'مشروع اختبار المتصفح للمرحلة الثالثة' : 'Phase 3 Browser Test Project',
+    );
     await expect(page.locator('.project-meta-band')).toContainText('2026');
     await expect(page.locator('.project-meta-band')).toContainText('Riyadh');
     await expect(page.locator('.project-gallery-item')).toHaveCount(1);
@@ -60,10 +64,12 @@ for (const locale of ['en', 'ar'] as const) {
     for (const route of routes) {
       await page.goto('/' + locale + route);
       const result = await new AxeBuilder({ page }).analyze();
-      const blockers = result.violations.filter((violation) =>
-        violation.impact === 'critical' || violation.impact === 'serious'
+      const blockers = result.violations.filter(
+        (violation) => violation.impact === 'critical' || violation.impact === 'serious',
       );
-      expect(blockers, locale + route + ': ' + blockers.map((item) => item.id).join(', ')).toEqual([]);
+      expect(blockers, locale + route + ': ' + blockers.map((item) => item.id).join(', ')).toEqual(
+        [],
+      );
     }
   });
 
@@ -72,7 +78,11 @@ for (const locale of ['en', 'ar'] as const) {
     const hrefs = new Set<string>();
     for (const origin of origins) {
       await page.goto('/' + locale + origin);
-      const links = await page.locator('a[href]').evaluateAll((nodes) => nodes.map((node) => (node as HTMLAnchorElement).getAttribute('href') || ''));
+      const links = await page
+        .locator('a[href]')
+        .evaluateAll((nodes) =>
+          nodes.map((node) => (node as HTMLAnchorElement).getAttribute('href') || ''),
+        );
       for (const href of links) {
         if (href.startsWith('/' + locale) && !href.includes('#')) hrefs.add(href);
       }
@@ -86,22 +96,39 @@ for (const locale of ['en', 'ar'] as const) {
   test('localized 404 works in ' + locale, async ({ page }) => {
     const response = await page.goto('/' + locale + '/this-route-does-not-exist-phase3');
     expect(response?.status()).toBe(404);
-    await expect(page.locator('h1')).toContainText(locale === 'ar' ? 'الصفحة غير موجودة' : 'Page not found');
+    await expect(page.locator('h1')).toContainText(
+      locale === 'ar' ? 'الصفحة غير موجودة' : 'Page not found',
+    );
   });
 
   test('contact form persists a submission in ' + locale, async ({ page }) => {
     const email = 'phase3-form@example.invalid';
     await db.contactSubmission.deleteMany({ where: { email } });
     await page.goto('/' + locale + '/contact');
-    await page.locator('input[name="name"]').fill(locale === 'ar' ? 'اختبار المرحلة الثالثة' : 'Phase 3 Test');
+    await page
+      .locator('input[name="name"]')
+      .fill(locale === 'ar' ? 'اختبار المرحلة الثالثة' : 'Phase 3 Test');
     await page.locator('input[name="organization"]').fill('Solutions Gate QA');
     await page.locator('input[name="email"]').fill(email);
-    await page.locator('textarea[name="message"]').fill(locale === 'ar' ? 'هذه رسالة اختبار آلية للنموذج العام.' : 'This is an automated Phase 3 public form test message.');
+    await page
+      .locator('textarea[name="message"]')
+      .fill(
+        locale === 'ar'
+          ? 'هذه رسالة اختبار آلية للنموذج العام.'
+          : 'This is an automated Phase 3 public form test message.',
+      );
     await page.locator('input[name="consent"]').check();
-    await page.getByRole('button', { name: locale === 'ar' ? 'إرسال الاستفسار' : 'Send inquiry' }).click();
-    await expect(page.getByRole('status')).toContainText(locale === 'ar' ? 'تم استلام رسالتك بنجاح' : 'received successfully');
+    await page
+      .getByRole('button', { name: locale === 'ar' ? 'إرسال الاستفسار' : 'Send inquiry' })
+      .click();
+    await expect(page.getByRole('status')).toContainText(
+      locale === 'ar' ? 'تم استلام رسالتك بنجاح' : 'received successfully',
+    );
 
-    const stored = await db.contactSubmission.findFirst({ where: { email }, orderBy: { createdAt: 'desc' } });
+    const stored = await db.contactSubmission.findFirst({
+      where: { email },
+      orderBy: { createdAt: 'desc' },
+    });
     expect(stored?.locale).toBe(locale);
     expect(stored?.notificationStatus).toBe('NOT_CONFIGURED');
     await db.contactSubmission.deleteMany({ where: { email } });
