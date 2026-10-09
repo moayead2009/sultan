@@ -1,11 +1,15 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { buildPageMetadata } from '@/lib/seo';
-import { getPublicEntities, getPublicPage, getSiteChrome } from '@/lib/public-site';
-import { isLocale } from '@/lib/i18n';
 import { PublicPage } from '@/components/public/public-page';
+import { isLocale } from '@/lib/i18n';
+import { getPublicEntities, getPublicPage, getSiteChrome } from '@/lib/public-site';
+import { buildPageMetadata } from '@/lib/seo';
 
-export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
   const { locale } = await params;
   if (!isLocale(locale)) return {};
   return buildPageMetadata('projects', locale);
@@ -13,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function Page({
   params,
-  searchParams
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
   searchParams: Promise<{ category?: string }>;
@@ -21,23 +25,24 @@ export default async function Page({
   const { locale } = await params;
   const query = await searchParams;
   if (!isLocale(locale)) notFound();
+
   const [page, entities, chrome] = await Promise.all([
     getPublicPage('projects', locale),
     getPublicEntities(locale),
-    getSiteChrome(locale)
+    getSiteChrome(locale),
   ]);
   if (!page) notFound();
 
-  const category = query.category?.trim();
-  const filteredEntities = category
-    ? { ...entities, projects: entities.projects.filter((project) => project.category?.slug === category) }
-    : entities;
+  const activeProjectCategory = query.category?.trim() || undefined;
 
-  return <PublicPage
-    locale={locale}
-    page={page}
-    entities={filteredEntities}
-    chrome={chrome}
-    breadcrumbs={[{ label: page.translation?.title || 'projects' }]}
-  />;
+  return (
+    <PublicPage
+      locale={locale}
+      page={page}
+      entities={entities}
+      chrome={chrome}
+      activeProjectCategory={activeProjectCategory}
+      breadcrumbs={[{ label: page.translation?.title || 'projects' }]}
+    />
+  );
 }

@@ -140,7 +140,7 @@ export async function getPublicEntities(locale: Locale) {
       categoryTranslation: localized(item.category.translations, locale),
       localizedFeatures: item.features.map((feature) => ({ ...feature, translation: localized(feature.translations, locale) }))
     })),
-    projects: projects.map((item) => ({ ...item, translation: localized(item.translations, locale) })),
+    projects: projects.map((item) => ({ ...item, translation: localized(item.translations, locale), categoryTranslation: item.category ? localized(item.category.translations, locale) : null })),
     projectCategories: projectCategories.map((item) => ({ ...item, translation: localized(item.translations, locale) })),
     clients: clients.map((item) => ({ ...item, translation: localized(item.translations, locale) })),
     metrics: metrics.map((item) => ({ ...item, translation: localized(item.translations, locale) })),
@@ -202,6 +202,13 @@ export async function getProject(slug: string, locale: Locale, includeDraft = fa
   });
   if (!item) return null;
   const clientAllowed = item.client?.enabled && item.client.identityConfirmed && item.client.publicDisplayApproved;
+  const publishedProjects = await db.project.findMany({
+    where: { status: 'PUBLISHED' },
+    orderBy: [{ sortOrder: 'asc' }, { publishedAt: 'desc' }, { id: 'asc' }],
+    select: { id: true, slug: true, translations: true }
+  });
+  const currentIndex = publishedProjects.findIndex((project) => project.id === item.id);
+  const localizeSibling = (project: (typeof publishedProjects)[number] | undefined) => project ? { ...project, translation: localized(project.translations, locale) } : null;
   return {
     ...item,
     translation: localized(item.translations, locale),
@@ -209,6 +216,8 @@ export async function getProject(slug: string, locale: Locale, includeDraft = fa
     clientTranslation: clientAllowed && item.client ? localized(item.client.translations, locale) : null,
     localizedServices: item.services
       .filter((row) => row.service.status === 'PUBLISHED')
-      .map((row) => ({ ...row.service, translation: localized(row.service.translations, locale) }))
+      .map((row) => ({ ...row.service, translation: localized(row.service.translations, locale) })),
+    previousProject: currentIndex > 0 ? localizeSibling(publishedProjects[currentIndex - 1]) : null,
+    nextProject: currentIndex >= 0 && currentIndex < publishedProjects.length - 1 ? localizeSibling(publishedProjects[currentIndex + 1]) : null
   };
 }

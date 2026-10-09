@@ -12,13 +12,15 @@ export function PublicPage({
   page,
   entities,
   chrome,
-  breadcrumbs = []
+  breadcrumbs = [],
+  activeProjectCategory
 }: {
   locale: Locale;
   page: NonNullable<Awaited<ReturnType<typeof getPublicPage>>>;
   entities: Awaited<ReturnType<typeof getPublicEntities>>;
   chrome: Awaited<ReturnType<typeof getSiteChrome>>;
   breadcrumbs?: Array<{ label: string; href?: string }>;
+  activeProjectCategory?: string;
 }) {
   const baseUrl = chrome.settings?.websiteUrl || env.APP_URL;
   const hasLocalizedHeroHeading = page.sections.some((section) => {
@@ -42,7 +44,7 @@ export function PublicPage({
           {page.translation.summary ? <p>{page.translation.summary}</p> : null}
         </div>
       </header> : null}
-      {page.sections.map((section) => <SectionRenderer key={section.id} section={section} locale={locale} entities={entities} contactFormEnabled={chrome.settings?.contactFormEnabled ?? false} contactFormNotice={locale === 'ar' ? chrome.settings?.inquiryFormNoticeAr : chrome.settings?.inquiryFormNoticeEn} />)}
+      {page.sections.map((section) => <SectionRenderer key={section.id} section={section} locale={locale} entities={entities} activeProjectCategory={activeProjectCategory} contactFormEnabled={chrome.settings?.contactFormEnabled ?? false} contactFormNotice={locale === 'ar' ? chrome.settings?.inquiryFormNoticeAr : chrome.settings?.inquiryFormNoticeEn} />)}
     </main>
     <SiteFooter data={chrome} />
   </>;
